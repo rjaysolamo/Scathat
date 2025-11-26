@@ -1,7 +1,0 @@
-ds_store
-.env
-venv
-/node_modules
-/artifacts
-/cache
-/package-lock.json
