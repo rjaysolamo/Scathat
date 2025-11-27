@@ -15,7 +15,7 @@ import { Footer } from "@/components/marketing/footer"
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-(--background) text-(--foreground)">
+    <main className="min-h-screen bg-transparent text-(--foreground)">
       <Header />
       <HeroScanner />
       <StatsDashboard />

@@ -1,6 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
+import { motion, useInView } from "framer-motion"
+import { staggerContainer, sectionTitle, sectionDesc, viewportConfig, scaleIn } from "@/lib/animations/variants"
 import { Button } from "@/components/ui/button"
 
 export function Dashboard() {
@@ -40,13 +42,13 @@ export function Dashboard() {
 
   return (
     <section className="w-full px-4 py-20 sm:py-32 lg:py-40 border-t border-border bg-card/50">
-      <div className="mx-auto max-w-4xl space-y-12">
-        <div className="text-center space-y-4">
-          <h2 className="text-3xl font-bold sm:text-4xl lg:text-5xl text-foreground">Try Scathat Now</h2>
-          <p className="text-lg text-muted-foreground">Analyze any smart contract instantly</p>
-        </div>
+      <motion.div className="mx-auto max-w-4xl space-y-12" initial="hidden" whileInView="visible" viewport={{ ...viewportConfig, amount: 0.3 }} variants={staggerContainer}>
+        <motion.div className="text-center space-y-4" variants={staggerContainer}>
+          <motion.h2 className="text-3xl font-bold sm:text-4xl lg:text-5xl text-foreground" variants={sectionTitle}>Try Scathat Now</motion.h2>
+          <motion.p className="text-lg text-muted-foreground" variants={sectionDesc}>Analyze any smart contract instantly</motion.p>
+        </motion.div>
 
-        <div className="rounded-lg border border-border bg-background p-8 space-y-6">
+        <motion.div className="rounded-lg border border-border bg-background p-8 space-y-6" variants={scaleIn}>
           <div className="space-y-2">
             <label className="block text-sm font-medium text-foreground">Contract Address</label>
             <div className="flex gap-2">
@@ -56,8 +58,9 @@ export function Dashboard() {
                 onChange={(e) => setContractAddress(e.target.value)}
                 placeholder="0x..."
                 className="flex-1 rounded-lg border border-border bg-card px-4 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                suppressHydrationWarning
               />
-              <Button onClick={mockScan} className="px-6">
+              <Button onClick={mockScan} className="px-6" suppressHydrationWarning>
                 Scan
               </Button>
             </div>
@@ -129,8 +132,8 @@ export function Dashboard() {
               <p className="text-muted-foreground">Enter a contract address and click Scan to see the analysis</p>
             </div>
           )}
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     </section>
   )
 }

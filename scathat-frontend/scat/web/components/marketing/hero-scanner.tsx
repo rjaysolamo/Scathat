@@ -54,7 +54,7 @@ export function HeroScanner() {
   }
 
   return (
-    <section className="relative min-h-[90vh] bg-gradient-to-br from-[color:--color-background] via-slate-900 to-emerald-950/20 pt-20 pb-12 px-4">
+    <section className="relative min-h-[90vh] bg-transparent pt-20 pb-12 px-4">
       {/* Background decoration - subtle animated elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-20 right-1/4 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl"></div>
@@ -70,14 +70,14 @@ export function HeroScanner() {
               Security Simplified
             </span>
           </h1>
-          <p className="text-xl text-[color:--color-text-secondary] max-w-2xl mx-auto">
+          <p className="text-xl text-[color:--color-text-secondary] max-w-2xl mx-auto drop-shadow-[0_1px_0_rgba(0,0,0,0.6)]">
             Scan any smart contract address and get instant risk assessment powered by AI. Protect your investments with
             one click.
           </p>
         </div>
 
         {/* Scanner card */}
-        <div className="bg-[color:--color-surface] border border-[color:--color-border] rounded-2xl p-8 shadow-2xl backdrop-blur-sm">
+        <div className="bg-[color:--color-surface]/80 border border-[color:--color-border] rounded-2xl p-8 shadow-2xl backdrop-blur-sm">
           <div className="space-y-4">
             {/* Input field */}
             <div className="flex flex-col sm:flex-row gap-3">
