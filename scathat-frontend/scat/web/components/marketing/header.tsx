@@ -17,6 +17,7 @@ import { useState } from "react"
 import Link from "next/link"
 import { Menu, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { LogoFramed } from "@/components/brand/LogoFramed"
 
 export function Header() {
   // Track mobile menu open/closed state
@@ -26,8 +27,13 @@ export function Header() {
     <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border/40">
       <nav className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
         {/* Brand/Logo - links to home */}
-        <Link href="/" className="font-bold text-xl text-cyan-400">
-          Scathat
+        <Link href="/" className="group flex items-center gap-3">
+          <span className="hidden sm:block -ml-2">
+            <LogoFramed widthPx={320} heightPx={320} borderInch={0.12} dpi={300} decorative backgroundHex="transparent" />
+          </span>
+          <span className="font-extrabold text-2xl md:text-3xl tracking-tight bg-gradient-to-r from-emerald-400 via-cyan-400 to-sky-400 bg-clip-text text-transparent drop-shadow-[0_0_24px_rgba(34,197,94,0.15)] group-hover:brightness-110">
+            Scathat
+          </span>
         </Link>
 
         {/* Desktop Navigation Menu - visible on md screens and up */}

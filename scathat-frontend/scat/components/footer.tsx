@@ -1,7 +1,55 @@
+"use client"
+import { motion } from "framer-motion"
+import { staggerContainer, viewportConfig, fadeIn } from "@/lib/animations/variants"
+
 export function Footer() {
   return (
-    <footer className="w-full border-t border-border bg-card/50 px-4 py-12 sm:py-16">
+    <motion.footer className="w-full border-t border-border bg-card/50 px-4 py-12 sm:py-16" initial="hidden" whileInView="visible" viewport={viewportConfig} variants={staggerContainer}>
       <div className="mx-auto max-w-4xl">
+        <motion.div className="mb-10 text-center space-y-3" variants={fadeIn}>
+          <div className="text-sm text-muted-foreground">Supported chains</div>
+          <div className="flex flex-wrap items-center justify-center gap-6 sm:gap-10">
+            <div className="flex items-center gap-2">
+              <svg className="h-6 w-6" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="12" r="10" fill="#0052FF" />
+                <rect x="6" y="11" width="9" height="2" rx="1" fill="#ffffff" />
+              </svg>
+              <span className="text-foreground text-sm">Base</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <svg className="h-6 w-6" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 2l-8 10 8 4 8-4-8-10z" fill="#627EEA" />
+                <path d="M12 22l-7-9 7 3 7-3-7 9z" fill="#627EEA" opacity=".85" />
+              </svg>
+              <span className="text-foreground text-sm">Ethereum</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <svg className="h-6 w-6" viewBox="0 0 24 24" aria-hidden="true">
+                <rect x="3" y="5" width="18" height="14" rx="3" fill="#2D3748" />
+                <path d="M6 9h8l4 6H10L6 9z" fill="#00A3FF" />
+              </svg>
+              <span className="text-foreground text-sm">Arbitrum</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <svg className="h-6 w-6" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="12" r="10" fill="#FF0420" />
+              </svg>
+              <span className="text-foreground text-sm">Optimism</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <svg className="h-6 w-6" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M6 8l3-2h9l-3 2H6zM6 13l3-2h9l-3 2H6zM6 18l3-2h9l-3 2H6z" fill="#14F195" />
+              </svg>
+              <span className="text-foreground text-sm">Solana</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <svg className="h-6 w-6" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M6 12l4-6 4 6-4 6-4-6z" fill="#8247E5" />
+              </svg>
+              <span className="text-foreground text-sm">Polygon</span>
+            </div>
+          </div>
+        </motion.div>
         <div className="grid gap-8 md:grid-cols-4">
           <div className="space-y-4">
             <div className="flex items-center gap-2">
@@ -77,7 +125,7 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="mt-8 border-t border-border pt-8">
+        <motion.div className="mt-8 border-t border-border pt-8" variants={fadeIn}>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-muted-foreground">© 2025 Scathat. Built for Base. All rights reserved.</p>
             <div className="flex gap-4">
@@ -95,8 +143,8 @@ export function Footer() {
               </a>
             </div>
           </div>
-        </div>
+        </motion.div>
       </div>
-    </footer>
+    </motion.footer>
   )
 }

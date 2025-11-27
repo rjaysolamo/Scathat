@@ -13,6 +13,7 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 import "@/styles/globals.css"
+import { AnimatedBackground } from "@/components/AnimatedBackground"
 
 // Configure sans-serif font from Google Fonts
 const geistSans = Geist({ subsets: ["latin"] })
@@ -49,7 +50,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${geistSans.className} ${geistMono.className}`}>{children}</body>
+      <body className={`${geistSans.className} ${geistMono.className}`}>
+        <AnimatedBackground />
+        {children}
+      </body>
     </html>
   )
 }

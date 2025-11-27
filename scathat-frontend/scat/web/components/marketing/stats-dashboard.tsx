@@ -50,7 +50,7 @@ export function StatsDashboard() {
             >
               <p className="text-4xl font-bold text-[color:--color-primary] mb-2">{stat.number}</p>
               <p className="text-lg font-semibold text-white mb-1">{stat.label}</p>
-              <p className="text-sm text-[color:--color-text-secondary]">{stat.description}</p>
+              <p className="text-sm text-[color:--color-text-secondary] drop-shadow-[0_1px_0_rgba(0,0,0,0.6)]">{stat.description}</p>
             </div>
           ))}
         </div>

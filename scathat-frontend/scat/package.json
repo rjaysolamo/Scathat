@@ -6,7 +6,8 @@
     "build": "next build",
     "dev": "next dev",
     "lint": "eslint .",
-    "start": "next start"
+    "start": "next start",
+    "export:brand": "node ./scripts/export-logo-assets.cjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -47,6 +48,8 @@
     "date-fns": "4.1.0",
     "embla-carousel-react": "8.5.1",
     "ethers": "latest",
+    "framer-motion": "^12.23.24",
+    "gsap": "^3.13.0",
     "hardhat": "latest",
     "input-otp": "1.4.1",
     "lucide-react": "^0.454.0",

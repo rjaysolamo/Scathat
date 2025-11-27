@@ -1,16 +1,19 @@
+"use client"
 import { Button } from "@/components/ui/button"
+import { motion } from "framer-motion"
+import { staggerContainer, sectionTitle, sectionDesc, viewportConfig, slideInLeft, slideInRight } from "@/lib/animations/variants"
 
 export function Download() {
   return (
     <section id="download" className="w-full px-4 py-20 sm:py-32 lg:py-40">
-      <div className="mx-auto max-w-4xl space-y-12">
-        <div className="text-center space-y-4">
-          <h2 className="text-3xl font-bold sm:text-4xl lg:text-5xl text-foreground">Download the Extension</h2>
-          <p className="text-lg text-muted-foreground">Get real-time protection as you browse Web3</p>
-        </div>
+      <motion.div className="mx-auto max-w-4xl space-y-12" initial="hidden" whileInView="visible" viewport={viewportConfig} variants={staggerContainer}>
+        <motion.div className="text-center space-y-4" variants={staggerContainer}>
+          <motion.h2 className="text-3xl font-bold sm:text-4xl lg:text-5xl text-foreground" variants={sectionTitle}>Download the Extension</motion.h2>
+          <motion.p className="text-lg text-muted-foreground" variants={sectionDesc}>Get real-time protection as you browse Web3</motion.p>
+        </motion.div>
 
-        <div className="grid gap-6 md:grid-cols-2">
-          <div className="rounded-lg border border-border bg-card p-8 space-y-6">
+        <motion.div className="grid gap-6 md:grid-cols-2" variants={staggerContainer}>
+          <motion.div className="rounded-lg border border-border bg-card p-8 space-y-6" variants={slideInLeft}>
             <div className="h-32 rounded bg-muted flex items-center justify-center">
               <div className="text-muted-foreground text-center">
                 <div className="text-3xl mb-2">Chrome</div>
@@ -23,10 +26,10 @@ export function Download() {
                 Works seamlessly with your browser. Real-time warnings before you approve any transaction.
               </p>
             </div>
-            <Button className="w-full">Download for Chrome</Button>
-          </div>
-
-          <div className="rounded-lg border border-border bg-card p-8 space-y-6">
+            <Button className="w-full" suppressHydrationWarning>Download for Chrome</Button>
+          </motion.div>
+          
+          <motion.div className="rounded-lg border border-border bg-card p-8 space-y-6" variants={slideInRight}>
             <div className="h-32 rounded bg-muted flex items-center justify-center">
               <div className="text-muted-foreground text-center">
                 <div className="text-3xl mb-2">Web App</div>
@@ -39,13 +42,13 @@ export function Download() {
                 Paste any contract address and get instant security analysis. No installation needed.
               </p>
             </div>
-            <Button className="w-full bg-transparent" variant="outline">
+            <Button className="w-full bg-transparent" variant="outline" suppressHydrationWarning>
               Launch Web App
             </Button>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
 
-        <div className="rounded-lg border border-border/50 bg-background p-6 space-y-3">
+        <motion.div className="rounded-lg border border-border/50 bg-background p-6 space-y-3" variants={staggerContainer}>
           <h4 className="font-bold text-foreground flex items-center gap-2">
             <svg className="w-5 h-5 text-primary" fill="currentColor" viewBox="0 0 20 20">
               <path
@@ -59,8 +62,8 @@ export function Download() {
           <p className="text-sm text-muted-foreground">
             Built for the Base ecosystem. No fees, no premium tiers. Just security that works.
           </p>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     </section>
   )
 }
