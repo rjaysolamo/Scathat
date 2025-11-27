@@ -17,6 +17,7 @@ import { useState } from "react"
 import Link from "next/link"
 import { Menu, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import Image from "next/image"
 
 export function Header() {
   // Track mobile menu open/closed state
@@ -26,8 +27,11 @@ export function Header() {
     <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border/40">
       <nav className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
         {/* Brand/Logo - links to home */}
-        <Link href="/" className="font-bold text-xl text-cyan-400">
-          Scathat
+        <Link href="/" className="flex items-center gap-2">
+          <span className="relative h-10 w-10 sm:h-12 sm:w-12">
+            <Image src="/logo-scathat.png" alt="Scathat Logo" fill sizes="48px" className="rounded-lg object-contain" priority />
+          </span>
+          <span className="font-bold text-xl text-cyan-400">Scathat</span>
         </Link>
 
         {/* Desktop Navigation Menu - visible on md screens and up */}

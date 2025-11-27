@@ -1,3 +1,6 @@
+"use client"
+import { m } from "framer-motion"
+import { fadeInUp, staggerContainer, slideLeft, slideRight } from "@/lib/animations"
 import { Button } from "@/components/ui/button"
 
 export function Download() {
@@ -5,12 +8,12 @@ export function Download() {
     <section id="download" className="w-full px-4 py-20 sm:py-32 lg:py-40">
       <div className="mx-auto max-w-4xl space-y-12">
         <div className="text-center space-y-4">
-          <h2 className="text-3xl font-bold sm:text-4xl lg:text-5xl text-foreground">Download the Extension</h2>
-          <p className="text-lg text-muted-foreground">Get real-time protection as you browse Web3</p>
+          <m.h2 initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }} variants={fadeInUp} className="text-3xl font-bold sm:text-4xl lg:text-5xl text-foreground">Download the Extension</m.h2>
+          <m.p initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }} variants={fadeInUp} className="text-lg text-muted-foreground">Get real-time protection as you browse Web3</m.p>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2">
-          <div className="rounded-lg border border-border bg-card p-8 space-y-6">
+        <m.div initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }} variants={staggerContainer} className="grid gap-6 md:grid-cols-2">
+          <m.div variants={slideLeft} className="rounded-lg border border-border bg-card p-8 space-y-6" style={{ boxShadow: "0 0 20px rgba(0, 242, 139, 0.15)" }}>
             <div className="h-32 rounded bg-muted flex items-center justify-center">
               <div className="text-muted-foreground text-center">
                 <div className="text-3xl mb-2">Chrome</div>
@@ -24,9 +27,9 @@ export function Download() {
               </p>
             </div>
             <Button className="w-full">Download for Chrome</Button>
-          </div>
+          </m.div>
 
-          <div className="rounded-lg border border-border bg-card p-8 space-y-6">
+          <m.div variants={slideRight} className="rounded-lg border border-border bg-card p-8 space-y-6">
             <div className="h-32 rounded bg-muted flex items-center justify-center">
               <div className="text-muted-foreground text-center">
                 <div className="text-3xl mb-2">Web App</div>
@@ -42,8 +45,8 @@ export function Download() {
             <Button className="w-full bg-transparent" variant="outline">
               Launch Web App
             </Button>
-          </div>
-        </div>
+          </m.div>
+        </m.div>
 
         <div className="rounded-lg border border-border/50 bg-background p-6 space-y-3">
           <h4 className="font-bold text-foreground flex items-center gap-2">

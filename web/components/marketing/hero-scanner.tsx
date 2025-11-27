@@ -14,10 +14,12 @@
 import { useState } from "react"
 import { ArrowRight, AlertCircle, CheckCircle2, Zap } from "lucide-react"
 
+type ScanResult = { status: "SAFE" | "WARNING" | "DANGEROUS"; score: number; color: "green" | "yellow" | "red"; message: string }
+
 export function HeroScanner() {
   const [contractAddress, setContractAddress] = useState("")
   const [isScanning, setIsScanning] = useState(false)
-  const [scanResult, setScanResult] = useState(null)
+  const [scanResult, setScanResult] = useState<ScanResult | null>(null)
 
   const handleScan = async () => {
     if (!contractAddress) return
@@ -27,7 +29,7 @@ export function HeroScanner() {
     await new Promise((resolve) => setTimeout(resolve, 2000))
 
     // Mock result based on address
-    const mockResults = [
+    const mockResults: ScanResult[] = [
       {
         status: "SAFE",
         score: 95,
@@ -48,7 +50,7 @@ export function HeroScanner() {
       },
     ]
 
-    const result = mockResults[Math.floor(Math.random() * mockResults.length)]
+    const result: ScanResult = mockResults[Math.floor(Math.random() * mockResults.length)]
     setScanResult(result)
     setIsScanning(false)
   }

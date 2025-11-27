@@ -2,6 +2,8 @@
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
+import { m } from "framer-motion"
+import { fadeInUp } from "@/lib/animations"
 
 export function Dashboard() {
   const [contractAddress, setContractAddress] = useState("0x...")
@@ -42,11 +44,11 @@ export function Dashboard() {
     <section className="w-full px-4 py-20 sm:py-32 lg:py-40 border-t border-border bg-card/50">
       <div className="mx-auto max-w-4xl space-y-12">
         <div className="text-center space-y-4">
-          <h2 className="text-3xl font-bold sm:text-4xl lg:text-5xl text-foreground">Try Scathat Now</h2>
-          <p className="text-lg text-muted-foreground">Analyze any smart contract instantly</p>
+          <m.h2 initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }} variants={fadeInUp} className="text-3xl font-bold sm:text-4xl lg:text-5xl text-foreground">Try Scathat Now</m.h2>
+          <m.p initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }} variants={fadeInUp} className="text-lg text-muted-foreground">Analyze any smart contract instantly</m.p>
         </div>
 
-        <div className="rounded-lg border border-border bg-background p-8 space-y-6">
+        <m.div initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }} variants={fadeInUp} className="rounded-lg border border-border bg-background p-8 space-y-6">
           <div className="space-y-2">
             <label className="block text-sm font-medium text-foreground">Contract Address</label>
             <div className="flex gap-2">
@@ -64,7 +66,7 @@ export function Dashboard() {
           </div>
 
           {scanResult && (
-            <div className={`rounded-lg border p-6 space-y-4 ${getRiskBg(scanResult)}`}>
+            <m.div initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }} variants={fadeInUp} className={`rounded-lg border p-6 space-y-4 ${getRiskBg(scanResult)}`}>
               <div className="space-y-2">
                 <div className="text-sm font-medium text-muted-foreground">Risk Assessment</div>
                 <div className={`text-3xl font-bold ${getRiskColor(scanResult)}`}>
@@ -108,11 +110,11 @@ export function Dashboard() {
                   </li>
                 </ul>
               </div>
-            </div>
+            </m.div>
           )}
 
           {!scanResult && (
-            <div className="rounded-lg border border-dashed border-border/50 bg-background/50 p-8 text-center space-y-3">
+            <m.div initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }} variants={fadeInUp} className="rounded-lg border border-dashed border-border/50 bg-background/50 p-8 text-center space-y-3">
               <svg
                 className="w-12 h-12 mx-auto text-muted-foreground"
                 fill="none"
@@ -127,9 +129,9 @@ export function Dashboard() {
                 />
               </svg>
               <p className="text-muted-foreground">Enter a contract address and click Scan to see the analysis</p>
-            </div>
+            </m.div>
           )}
-        </div>
+        </m.div>
       </div>
     </section>
   )

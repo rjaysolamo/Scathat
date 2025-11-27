@@ -3,6 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import Image from "next/image"
 
 export function Header() {
   const [isOpen, setIsOpen] = useState(false)
@@ -11,8 +12,8 @@ export function Header() {
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold">
-            S
+          <div className="relative h-10 w-10 sm:h-12 sm:w-12">
+            <Image src="/logo-scathat.png" alt="Scathat Logo" fill sizes="48px" className="rounded-lg object-contain" priority />
           </div>
           <span className="font-bold text-lg text-foreground">Scathat</span>
         </div>

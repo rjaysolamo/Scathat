@@ -10,11 +10,14 @@
  */
 
 import { expect } from "chai"
-import { ethers } from "hardhat"
-import type { RiskRegistry } from "../typechain-types"
+import hre from "hardhat"
+const { ethers } = hre
+import { beforeEach, describe, it } from "mocha"
+ 
+
 
 describe("RiskRegistry", () => {
-  let registry: RiskRegistry
+  let registry: any
   let owner: any
   let writer: any
   let unauthorized: any
@@ -31,6 +34,7 @@ describe("RiskRegistry", () => {
     // Deploy fresh contract for each test
     const RiskRegistry = await ethers.getContractFactory("RiskRegistry")
     registry = await RiskRegistry.deploy()
+    await registry.waitForDeployment()
   })
 
   // ============ WRITE OPERATIONS TESTS ============
@@ -58,18 +62,18 @@ describe("RiskRegistry", () => {
 
     it("Should reject unauthorized addresses from writing", async () => {
       const tx = registry.connect(unauthorized).writeRiskScore(TEST_CONTRACT, SAFE_SCORE)
-      await expect(tx).to.be.revertedWith("Only owner or authorized writers")
+      await expect(tx).to.be.revertedWith("RiskRegistry: Only owner or authorized writers can perform this action")
     })
 
     it("Should reject empty risk scores", async () => {
       const tx = registry.writeRiskScore(TEST_CONTRACT, "")
-      await expect(tx).to.be.revertedWith("Risk score cannot be empty")
+      await expect(tx).to.be.revertedWith("RiskRegistry: Risk score cannot be empty")
     })
 
     it("Should reject risk scores exceeding max length", async () => {
       const longScore = "x".repeat(257) // MAX_RISK_SCORE_LENGTH is 256
       const tx = registry.writeRiskScore(TEST_CONTRACT, longScore)
-      await expect(tx).to.be.revertedWith("exceeds maximum length")
+      await expect(tx).to.be.revertedWith("RiskRegistry: Risk score exceeds maximum length")
     })
 
     it("Should prevent overwriting existing scores", async () => {
@@ -78,7 +82,7 @@ describe("RiskRegistry", () => {
 
       // Attempt to write another score to same contract
       const tx = registry.writeRiskScore(TEST_CONTRACT, HIGH_RISK_SCORE)
-      await expect(tx).to.be.revertedWith("Score already exists")
+      await expect(tx).to.be.revertedWith("RiskRegistry: Score already exists for this contract. Use updateRiskScore (owner only) to modify.")
     })
   })
 
@@ -132,12 +136,12 @@ describe("RiskRegistry", () => {
       await registry.writeRiskScore(TEST_CONTRACT, SAFE_SCORE)
 
       const tx = registry.connect(writer).updateRiskScore(TEST_CONTRACT, HIGH_RISK_SCORE)
-      await expect(tx).to.be.revertedWith("Ownable: caller is not the owner")
+      await expect(tx).to.be.revertedWithCustomError(registry, "OwnableUnauthorizedAccount")
     })
 
     it("Should reject update for non-existent scores", async () => {
       const tx = registry.updateRiskScore(TEST_CONTRACT, HIGH_RISK_SCORE)
-      await expect(tx).to.be.revertedWith("No score exists")
+      await expect(tx).to.be.revertedWith("RiskRegistry: No score exists for this contract")
     })
   })
 
@@ -157,7 +161,7 @@ describe("RiskRegistry", () => {
       await registry.writeRiskScore(TEST_CONTRACT, SAFE_SCORE)
 
       const tx = registry.connect(writer).removeRiskScore(TEST_CONTRACT)
-      await expect(tx).to.be.revertedWith("Ownable: caller is not the owner")
+      await expect(tx).to.be.revertedWithCustomError(registry, "OwnableUnauthorizedAccount")
     })
 
     it("Should allow re-writing after removal", async () => {
@@ -188,7 +192,7 @@ describe("RiskRegistry", () => {
       await registry.authorizeWriter(writer.address)
 
       const tx = registry.authorizeWriter(writer.address)
-      await expect(tx).to.be.revertedWith("already authorized")
+      await expect(tx).to.be.revertedWith("RiskRegistry: Writer already authorized")
     })
 
     it("Should revoke writer permissions", async () => {
@@ -202,7 +206,7 @@ describe("RiskRegistry", () => {
 
     it("Should only allow owner to manage writers", async () => {
       const tx = registry.connect(writer).authorizeWriter(unauthorized.address)
-      await expect(tx).to.be.revertedWith("Ownable: caller is not the owner")
+      await expect(tx).to.be.revertedWithCustomError(registry, "OwnableUnauthorizedAccount")
     })
   })
 

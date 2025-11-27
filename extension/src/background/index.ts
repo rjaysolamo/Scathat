@@ -1,15 +1,11 @@
 // Background service worker for Scathat extension
 
-const chrome = require("chrome")
+// In a Chrome extension background script, the chrome global is already provided
+// by the extension runtime; require() is not available and causes the error.
+// Simply remove the require line and use chrome directly.
 
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.action === "scanContract") {
-    handleContractScan(message.contractAddress)
-      .then((result) => sendResponse({ success: true, result }))
-      .catch((error) => sendResponse({ success: false, error: error.message }))
-    return true // Required for async sendResponse
-  }
-})
+xxxxx
+
 
 async function handleContractScan(contractAddress: string) {
   try {
@@ -37,6 +33,7 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
     })
   }
 })
+
 
 function injectScathatButton() {
   const button = document.createElement("button")

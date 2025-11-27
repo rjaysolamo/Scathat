@@ -7,11 +7,11 @@
  * and overseeing platform health. Accessible only to authorized admins.
  */
 
-import { AdminHeader } from "@/components/admin/admin-header"
-import { MetricsGrid } from "@/components/admin/metrics-grid"
-import { RecentScans } from "@/components/admin/recent-scans"
-import { UserActivity } from "@/components/admin/user-activity"
-import { SystemHealth } from "@/components/admin/system-health"
+import { AdminHeader } from "@/web/components/admin/admin-header"
+import { MetricsGrid } from "@/web/components/admin/metrics-grid"
+import { RecentScans } from "@/web/components/admin/recent-scans"
+import { UserActivity } from "@/web/components/admin/user-activity"
+import { SystemHealth } from "@/web/components/admin/system-health"
 import { useState, useEffect } from "react"
 
 export default function AdminDashboard() {

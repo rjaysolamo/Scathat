@@ -1,3 +1,7 @@
+"use client"
+import { m } from "framer-motion"
+import { fadeInUp, staggerContainer, staggerItem } from "@/lib/animations"
+
 export function HowItWorks() {
   const steps = [
     {
@@ -36,24 +40,21 @@ export function HowItWorks() {
     <section id="how" className="w-full px-4 py-20 sm:py-32 lg:py-40 border-t border-border bg-card/50">
       <div className="mx-auto max-w-4xl space-y-12">
         <div className="text-center space-y-4">
-          <h2 className="text-3xl font-bold sm:text-4xl lg:text-5xl text-foreground">How It Works</h2>
-          <p className="text-lg text-muted-foreground">The complete flow from contract submission to protection</p>
+          <m.h2 initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }} variants={fadeInUp} className="text-3xl font-bold sm:text-4xl lg:text-5xl text-foreground">How It Works</m.h2>
+          <m.p initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }} variants={fadeInUp} className="text-lg text-muted-foreground">The complete flow from contract submission to protection</m.p>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <m.div initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }} variants={staggerContainer} className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {steps.map((step, index) => (
-            <div
-              key={index}
-              className="rounded-lg border border-border bg-background p-6 space-y-3 hover:border-accent/50 transition-colors"
-            >
+            <m.div key={index} variants={staggerItem} className="rounded-lg border border-border bg-background p-6 space-y-3 hover:border-accent/50 transition-colors">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold text-sm">
                 {step.number}
               </div>
               <h3 className="font-bold text-foreground">{step.title}</h3>
               <p className="text-sm text-muted-foreground">{step.description}</p>
-            </div>
+            </m.div>
           ))}
-        </div>
+        </m.div>
       </div>
     </section>
   )

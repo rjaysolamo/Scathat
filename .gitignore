@@ -7,3 +7,7 @@
 /build
 .vercel
 *.log
+typechain-types/
+contracts/.artifacts/
+contracts/.cache/
+tsconfig.tsbuildinfo
