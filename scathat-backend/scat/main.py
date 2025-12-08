@@ -25,11 +25,12 @@ from slowapi.middleware import SlowAPIMiddleware
 # Import services
 from services.explorer_service import ExplorerService, ExplorerConfig
 from services.web3_service import Web3Service, Web3Config
-from services.venice_service import VeniceService, VeniceConfig
 from services.agentkit_service import AgentKitService, AgentKitConfig
 from services.ai_aggregator_service import AIAggregatorService, ModelOutput, RiskLevel
 from services.pinecone_service import PineconeService
 from services.database_service import DatabaseService
+from services.scan_orchestrator_service import ScanOrchestratorService
+from services.ai_engine_service import AIEngineService, ModelResult
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -76,14 +77,6 @@ try:
     )
     explorer_service = ExplorerService(explorer_config)
     
-    # Venice Service Configuration
-    venice_config = VeniceConfig(
-        api_url=os.getenv("VENICE_API_URL", "https://api.venice.ai/v1"),
-        api_key=os.getenv("VENICE_API_KEY", "demo_key"),
-        model_id=os.getenv("VENICE_MODEL_ID", "default-model")
-    )
-    venice_service = VeniceService(venice_config)
-    
     # Web3 Service Configuration (for Base Sepolia)
     web3_config = Web3Config(
         rpc_url=os.getenv("BASE_SEPOLIA_RPC_URL", "https://base-sepolia-rpc.publicnode.com"),
@@ -110,6 +103,22 @@ try:
     
     # Database Service
     database_service = DatabaseService()
+    
+    # AI Engine Service (Fast local models with batching + caching)
+    ai_engine_service = AIEngineService()
+    
+    # Scan Orchestrator Service
+    ai_services = {
+        "agentkit": agentkit_service
+    }
+    scan_orchestrator_service = ScanOrchestratorService(
+        explorer_service=explorer_service,
+        web3_service=web3_service,
+        ai_services=ai_services,
+        ai_aggregator_service=ai_aggregator_service,
+        pinecone_service=pinecone_service,
+        database_service=database_service
+    )
     
     print("✅ All services initialized successfully for demonstration")
     
@@ -245,7 +254,7 @@ async def analyze_with_agentkit(request: AgentKitAnalysisRequest) -> AgentKitAna
 @app.post("/scan", response_model=ScanResponse)
 async def scan_contract(request: ScanRequest) -> ScanResponse:
     """
-    Full contract scanning flow: fetch data, analyze with AI, write to blockchain.
+    Full contract scanning flow using orchestrator service.
     
     Args:
         request (ScanRequest): Contract scanning request containing address and chain ID
@@ -264,23 +273,17 @@ async def scan_contract(request: ScanRequest) -> ScanResponse:
                 detail="Invalid contract address format. Must start with '0x' and be 42 characters long."
             )
         
-        # 1. Fetch contract data from blockchain explorer
-        contract_data = await explorer_service.get_contract_source_code(request.contract_address)
+        # Use orchestrator service for complete scanning workflow
+        scan_result = await scan_orchestrator_service.scan_contract(request.contract_address)
         
-        if not contract_data or not contract_data.get("source_code"):
+        if not scan_result.success:
             raise HTTPException(
-                status_code=404,
-                detail="Contract not found or source code not available on Base Sepolia."
+                status_code=500,
+                detail=f"Contract scan failed: {scan_result.error}"
             )
         
-        # 2. Analyze contract with Venice.ai AI
-        risk_analysis = await venice_service.analyze_contract_code(contract_data["source_code"])
-        
-        if not risk_analysis or not risk_analysis.get("risk_score"):
-            # Demo fallback: Return mock risk score if AI service unavailable
-            risk_score = "MEDIUM"
-        else:
-            risk_score = risk_analysis["risk_score"]
+        # Convert risk score to string format for compatibility
+        risk_score_str = f"{scan_result.final_risk_score:.2f}" if scan_result.final_risk_score is not None else "0.50"
         
         # 3. Write risk score to on-chain registry (demo mode)
         registry_address = os.getenv("RESULTS_REGISTRY_ADDRESS")
@@ -295,7 +298,7 @@ async def scan_contract(request: ScanRequest) -> ScanResponse:
             
             tx_hash = web3_service.write_score_to_chain(
                 contract_address=request.contract_address,
-                risk_score=risk_score,
+                risk_score=risk_score_str,
                 private_key=private_key,
                 registry_address=registry_address,
                 registry_abi=registry_abi
@@ -306,7 +309,7 @@ async def scan_contract(request: ScanRequest) -> ScanResponse:
         return ScanResponse(
             message="Scan complete and result recorded successfully",
             contract_address=request.contract_address,
-            risk_score=risk_score,
+            risk_score=risk_score_str,
             transaction_hash=tx_hash,
             scan_id=scan_id,
             status="completed"
@@ -709,6 +712,262 @@ async def update_model_config(
         logger.error(f"Model update failed: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Model update failed: {str(e)}")
 
+
+# AI Engine Models
+class AIEngineRequest(BaseModel):
+    """Request model for AI engine analysis."""
+    source_code: Optional[str] = None
+    bytecode: Optional[str] = None
+    contract_address: Optional[str] = None
+    is_proxy: bool = False
+
+class AIEngineResponse(BaseModel):
+    """Response model for AI engine analysis."""
+    risk_score: float
+    confidence: float
+    explanation: str
+    detected_issues: List[str]
+    recommendations: List[str]
+    processing_time_ms: int
+    success: bool
+
+@app.post("/analyze/ai-engine", response_model=AIEngineResponse)
+@limiter.limit("100/minute")  # High throughput for fast AI engine
+async def analyze_with_ai_engine(request: AIEngineRequest) -> AIEngineResponse:
+    """
+    Analyze contract using fast AI engine with batching and caching.
+    
+    Target: <200ms response time with local models.
+    
+    Args:
+        request (AIEngineRequest): Contract data for analysis
+        
+    Returns:
+        AIEngineResponse: Fast AI analysis results
+    """
+    try:
+        # Prepare contract data
+        contract_data = {
+            'source_code': request.source_code,
+            'bytecode': request.bytecode,
+            'contract_address': request.contract_address,
+            'is_proxy': request.is_proxy
+        }
+        
+        # Analyze with AI engine (fast local models)
+        result = await ai_engine_service.analyze_contract(contract_data)
+        
+        return AIEngineResponse(
+            risk_score=result.risk_score,
+            confidence=result.confidence,
+            explanation=result.explanation,
+            detected_issues=result.detected_issues,
+            recommendations=result.recommendations,
+            processing_time_ms=result.processing_time_ms,
+            success=True
+        )
+        
+    except Exception as e:
+        logger.error(f"AI Engine analysis failed: {e}")
+        return AIEngineResponse(
+            risk_score=0.5,
+            confidence=0.1,
+            explanation=f"Analysis failed: {str(e)}",
+            detected_issues=["Analysis service unavailable"],
+            recommendations=["Retry analysis or use alternative endpoint"],
+            processing_time_ms=0,
+            success=False
+        )
+
+# AgentKit Server Action Endpoints
+
+# Pydantic model for block request
+class BlockRequest(BaseModel):
+    """Request model for blocking a contract."""
+    contract_address: str
+    chain_id: int = 84532  # Default to Base Sepolia
+    reason: str
+
+# Pydantic model for limit request  
+class LimitRequest(BaseModel):
+    """Request model for setting approval limits."""
+    contract_address: str
+    chain_id: int = 84532  # Default to Base Sepolia
+    token_address: str
+    max_amount: float
+
+# Pydantic model for pause request
+class PauseRequest(BaseModel):
+    """Request model for pausing protection."""
+    duration_minutes: int = 30
+
+# Pydantic model for action response
+class ActionResponse(BaseModel):
+    """Response model for protection actions."""
+    success: bool
+    message: str
+    action: str
+
+@app.post("/agent/block", response_model=ActionResponse)
+@limiter.limit("10/minute")  
+async def block_contract(request: Request, block_request: BlockRequest) -> ActionResponse:
+    """
+    Block a contract using AgentKit protection.
+    
+    This endpoint blocks a contract address from being interacted with
+    through AgentKit-protected wallets and dApps.
+    
+    Args:
+        block_request (BlockRequest): Block request with contract details
+        
+    Returns:
+        ActionResponse: Action status and message
+    """
+    try:
+        # Validate contract address
+        if not block_request.contract_address.startswith("0x") or len(block_request.contract_address) != 42:
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid contract address format"
+            )
+        
+        # Call AgentKit service to block contract
+        success = await agentkit_service.block_contract(
+            block_request.contract_address,
+            block_request.chain_id,
+            block_request.reason
+        )
+        
+        if success:
+            return ActionResponse(
+                success=True,
+                message=f"Contract {block_request.contract_address} blocked successfully",
+                action="block"
+            )
+        else:
+            raise HTTPException(
+                status_code=500,
+                detail="Failed to block contract"
+            )
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Block action failed: {str(e)}"
+        )
+
+@app.post("/agent/limit", response_model=ActionResponse)
+@limiter.limit("10/minute")
+async def set_approval_limit(request: Request, limit_request: LimitRequest) -> ActionResponse:
+    """
+    Set approval limits for a contract using AgentKit protection.
+    
+    This endpoint sets maximum approval limits for token interactions
+    with a specific contract through AgentKit-protected wallets.
+    
+    Args:
+        limit_request (LimitRequest): Limit request with contract and token details
+        
+    Returns:
+        ActionResponse: Action status and message
+    """
+    try:
+        # Validate contract addresses
+        for addr in [limit_request.contract_address, limit_request.token_address]:
+            if not addr.startswith("0x") or len(addr) != 42:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Invalid contract address format"
+                )
+        
+        # Validate amount
+        if limit_request.max_amount <= 0:
+            raise HTTPException(
+                status_code=400,
+                detail="Max amount must be positive"
+            )
+        
+        # Call AgentKit service to set approval limit
+        success = await agentkit_service.set_approval_limit(
+            limit_request.contract_address,
+            limit_request.chain_id,
+            limit_request.token_address,
+            limit_request.max_amount
+        )
+        
+        if success:
+            return ActionResponse(
+                success=True,
+                message=f"Approval limit set for {limit_request.contract_address}: {limit_request.max_amount} of {limit_request.token_address}",
+                action="limit"
+            )
+        else:
+            raise HTTPException(
+                status_code=500,
+                detail="Failed to set approval limit"
+            )
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Limit action failed: {str(e)}"
+        )
+
+@app.post("/agent/pause", response_model=ActionResponse)
+@limiter.limit("5/minute")  # Lower limit for pause actions
+async def pause_protection(request: Request, pause_request: PauseRequest) -> ActionResponse:
+    """
+    Pause AgentKit protection temporarily.
+    
+    This endpoint pauses all AgentKit protection features for a specified
+    duration, allowing unrestricted interactions.
+    
+    Args:
+        pause_request (PauseRequest): Pause request with duration
+        
+    Returns:
+        ActionResponse: Action status and message
+    """
+    try:
+        # Validate duration
+        if pause_request.duration_minutes <= 0:
+            raise HTTPException(
+                status_code=400,
+                detail="Duration must be positive"
+            )
+        
+        if pause_request.duration_minutes > 1440:  # 24 hours
+            raise HTTPException(
+                status_code=400,
+                detail="Duration cannot exceed 24 hours"
+            )
+        
+        # Call AgentKit service to pause protection
+        success = await agentkit_service.pause_protection(pause_request.duration_minutes)
+        
+        if success:
+            return ActionResponse(
+                success=True,
+                message=f"Protection paused for {pause_request.duration_minutes} minutes",
+                action="pause"
+            )
+        else:
+            raise HTTPException(
+                status_code=500,
+                detail="Failed to pause protection"
+            )
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Pause action failed: {str(e)}"
+        )
 
 # Request Logging Middleware
 @app.middleware("http")

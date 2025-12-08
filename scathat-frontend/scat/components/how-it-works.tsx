@@ -17,7 +17,7 @@ export function HowItWorks() {
     {
       number: "3",
       title: "AI Analysis",
-      description: "Python AI engine sends contract to Venice.ai for risk scoring",
+      description: "Python AI engine sends contract to for risk scoring",
     },
     {
       number: "4",

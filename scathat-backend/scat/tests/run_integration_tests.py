@@ -23,7 +23,6 @@ def run_tests():
     test_files = [
         "tests/integration/test_services_integration.py",
         "tests/integration/test_explorer_service.py",
-        "tests/integration/test_venice_service.py",
         "tests/integration/test_web3_service.py",
         "tests/integration/test_agentkit_service.py"
     ]

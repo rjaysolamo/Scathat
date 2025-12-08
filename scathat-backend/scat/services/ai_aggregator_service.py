@@ -52,7 +52,6 @@ class AIAggregatorService:
         # Model weights based on reliability and performance
         self.model_weights = {
             "agentkit": 0.4,    # Coinbase AgentKit - high reliability
-            "venice": 0.3,      # Venice Protocol - decentralized AI
             "local_llm": 0.2,   # Local LLM analysis
             "heuristics": 0.1   # Rule-based heuristics
         }

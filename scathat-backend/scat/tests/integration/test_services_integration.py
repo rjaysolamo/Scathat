@@ -11,7 +11,7 @@ from fastapi.testclient import TestClient
 from unittest.mock import AsyncMock, patch
 
 # Import the main app and services
-from main import app, explorer_service, venice_service, web3_service, agentkit_service
+from main import app, explorer_service, web3_service, agentkit_service
 
 
 class TestServicesIntegration:
@@ -40,8 +40,8 @@ class TestServicesIntegration:
         assert data["service"] == "scathat-api"
     
     @patch('services.explorer_service.ExplorerService.get_contract_source_code')
-    @patch('services.venice_service.VeniceService.analyze_contract_code')
-    def test_scan_contract_integration(self, mock_venice_analyze, mock_explorer_get):
+    @patch('services.agentkit_service.ContractSecurityAnalyzer')
+    def test_scan_contract_integration(self, mock_agentkit_analyze, mock_explorer_get):
         """Test the complete contract scanning flow integration."""
         # Mock explorer service response
         mock_explorer_get.return_value = {
@@ -50,8 +50,8 @@ class TestServicesIntegration:
             "compiler_version": "0.8.20"
         }
         
-        # Mock Venice service response
-        mock_venice_analyze.return_value = {
+        # Mock AgentKit service response
+        mock_agentkit_analyze.return_value = {
             "risk_score": "MEDIUM",
             "confidence": 0.85,
             "vulnerabilities": []
@@ -176,13 +176,11 @@ class TestServiceInitialization:
     def test_services_initialized(self):
         """Test that all services are properly initialized."""
         assert explorer_service is not None
-        assert venice_service is not None
         assert web3_service is not None
         assert agentkit_service is not None
         
         # Verify service configurations
         assert hasattr(explorer_service, 'config')
-        assert hasattr(venice_service, 'config')
         assert hasattr(web3_service, 'config')
         assert hasattr(agentkit_service, 'api_url')
     
@@ -191,10 +189,7 @@ class TestServiceInitialization:
         # Explorer service should have demo config
         assert explorer_service.config.api_key == "demo_key"
         assert explorer_service.config.chain_id == 84532
-        
-        # Venice service should have demo config
-        assert venice_service.config.api_key == "demo_key"
-        
+    
         # Web3 service should have demo config
         assert web3_service.config.chain_id == 84532
         
