@@ -8,10 +8,8 @@ Handles contract verification, source code retrieval, and transaction history an
 import logging
 import aiohttp
 import asyncio
-import time
 from typing import Dict, Any, Optional, Tuple, List
 from dataclasses import dataclass
-from urllib.parse import urlencode
 
 logger = logging.getLogger(__name__)
 
@@ -379,3 +377,142 @@ class ExplorerService:
         # TODO: Implement contract verification logic
         logger.warning("Contract verification not yet implemented")
         return False
+
+    async def normalize_contract_metadata(self, contract_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Normalize contract metadata from blockchain explorer response.
+        
+        Args:
+            contract_data (Dict[str, Any]): Raw contract data from explorer API
+            
+        Returns:
+            Dict[str, Any]: Normalized contract metadata with standardized fields
+        """
+        try:
+            if not contract_data or not isinstance(contract_data, dict):
+                return {
+                    'normalized': False,
+                    'error': 'Invalid contract data format'
+                }
+            
+            # Extract and normalize contract information
+            result = contract_data.get('result', [{}])[0] if isinstance(contract_data.get('result'), list) else {}
+            
+            normalized_metadata = {
+                'contract_address': result.get('ContractAddress', '').lower(),
+                'contract_name': result.get('ContractName', 'Unknown'),
+                'compiler_version': result.get('CompilerVersion', 'Unknown'),
+                'optimization_used': result.get('OptimizationUsed', '0') == '1',
+                'runs': int(result.get('Runs', 0)),
+                'verified_status': result.get('Proxy', '0') == '0',  # Not a proxy contract
+                'is_proxy': result.get('Proxy', '0') != '0',
+                'implementation_address': result.get('Implementation', '').lower() if result.get('Proxy', '0') != '0' else None,
+                'source_code': result.get('SourceCode', ''),
+                'abi': result.get('ABI', ''),
+                'creation_tx_hash': result.get('CreationTxHash', '').lower(),
+                'library_usage': len(result.get('Library', '')) > 0 if result.get('Library') else False,
+                'swarm_source': result.get('SwarmSource', ''),
+                'license_type': result.get('LicenseType', 'Unknown'),
+                'normalized': True
+            }
+            
+            # Additional metadata extraction
+            if normalized_metadata['source_code']:
+                # Extract additional insights from source code
+                normalized_metadata['source_code_length'] = len(normalized_metadata['source_code'])
+                normalized_metadata['has_comments'] = '//' in normalized_metadata['source_code'] or '/*' in normalized_metadata['source_code']
+                
+            # Validate Ethereum address format
+            if normalized_metadata['contract_address'] and not self._is_valid_address(normalized_metadata['contract_address']):
+                normalized_metadata['contract_address_valid'] = False
+            else:
+                normalized_metadata['contract_address_valid'] = True
+                
+            return normalized_metadata
+            
+        except Exception as e:
+            logger.error(f"Error normalizing contract metadata: {str(e)}")
+            return {
+                'normalized': False,
+                'error': f'Normalization failed: {str(e)}'
+            }
+
+    async def get_contract_bytecode(self, contract_address: str) -> Optional[str]:
+        """
+        Get contract bytecode directly from blockchain (for unverified contracts).
+        
+        Args:
+            contract_address (str): The contract address
+            
+        Returns:
+            Optional[str]: Contract bytecode as hex string, None if not found
+        """
+        try:
+            await self._ensure_session()
+            
+            params = {
+                'module': 'proxy',
+                'action': 'eth_getCode',
+                'address': contract_address,
+                'tag': 'latest',
+                'apikey': self.config.api_key
+            }
+            
+            async with self.session.get(self.config.base_url, params=params) as response:
+                response.raise_for_status()
+                
+                data = await response.json()
+                if data.get('status') == '1' and data.get('message') == 'OK':
+                    return data.get('result')
+                else:
+                    logger.warning(f"Failed to get bytecode for {contract_address}: {data.get('message', 'Unknown error')}")
+                    return None
+                    
+        except aiohttp.ClientError as e:
+            logger.error(f"Request error getting bytecode for {contract_address}: {str(e)}")
+            return None
+        except Exception as e:
+            logger.error(f"Unexpected error getting bytecode for {contract_address}: {str(e)}")
+            return None
+
+    async def get_contract_creation_info(self, contract_address: str) -> Optional[Dict[str, Any]]:
+        """
+        Get contract creation information including transaction and block details.
+        
+        Args:
+            contract_address (str): The contract address
+            
+        Returns:
+            Optional[Dict[str, Any]]: Contract creation information
+        """
+        try:
+            await self._ensure_session()
+            
+            params = {
+                'module': 'contract',
+                'action': 'getcontractcreation',
+                'contractaddresses': contract_address,
+                'apikey': self.config.api_key
+            }
+            
+            async with self.session.get(self.config.base_url, params=params) as response:
+                response.raise_for_status()
+                
+                data = await response.json()
+                if data.get('status') == '1' and data.get('message') == 'OK':
+                    result = data.get('result', [{}])[0]
+                    return {
+                        'creator_address': result.get('contractCreator', '').lower(),
+                        'transaction_hash': result.get('txHash', '').lower(),
+                        'block_number': int(result.get('blockNumber', 0))
+                    }
+                else:
+                    logger.warning(f"Failed to get creation info for {contract_address}: {data.get('message', 'Unknown error')}")
+                    return None
+                    
+        except aiohttp.ClientError as e:
+            logger.error(f"Request error getting creation info for {contract_address}: {str(e)}")
+            return None
+        except Exception as e:
+            logger.error(f"Unexpected error getting creation info for {contract_address}: {str(e)}")
+            return None
