@@ -1,14 +1,5 @@
-"use client"
-import Header from "@/components/try-scan/Header"
-import ScannerInterface from "@/components/try-scan/scanner-interface"
+import TryScan from "@/components/try-scan/TryScan"
 
 export default function Page() {
-  return (
-    <main className="min-h-screen bg-background">
-      <Header />
-      <div className="container px-4 md:px-6 py-24">
-        <ScannerInterface />
-      </div>
-    </main>
-  )
+  return <TryScan />
 }
