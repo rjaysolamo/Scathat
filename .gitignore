@@ -7,3 +7,4 @@ scathat-frontend/package-lock.json
 Thumbs.db
 .idea/
 .vscode/
+/node_modules/
