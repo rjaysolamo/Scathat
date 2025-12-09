@@ -4,7 +4,7 @@ import ScannerInterface from "@/components/try-scan/scanner-interface"
 
 export default function Page() {
   return (
-    <main className="min-h-screen">
+    <main className="min-h-screen bg-background">
       <Header />
       <div className="container px-4 md:px-6 py-24">
         <ScannerInterface />
