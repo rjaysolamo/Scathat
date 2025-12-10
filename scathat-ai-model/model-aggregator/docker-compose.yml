@@ -32,6 +32,25 @@ services:
       - scathat-network
     restart: unless-stopped
 
+  # Code analyzer service
+  code-analyzer:
+    build: ../model-code-analyzer
+    container_name: code-analyzer
+    ports:
+      - "8002:8002"
+    environment:
+      - MODEL_PATH=./fine_tuned_model
+      - LOG_LEVEL=INFO
+    networks:
+      - scathat-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
 networks:
   scathat-network:
     driver: bridge

@@ -130,6 +130,52 @@ Content-Type: application/json
 {"model_outputs": {"code": {...}, "bytecode": {...}, "behavior": {...}}}
 ```
 
+## 🐳 Deployment
+
+### Using Docker (Recommended)
+
+1. **Build and run**:
+   ```bash
+   chmod +x deploy.sh
+   ./deploy.sh
+   ```
+
+2. **Using Docker Compose**:
+   ```bash
+   docker-compose up -d
+   ```
+
+### Manual Setup
+
+1. **Install dependencies**:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+2. **Run the server**:
+   ```bash
+   uvicorn api_server:app --host 0.0.0.0 --port 8001 --reload
+   ```
+
+### Configuration
+
+#### Environment Variables
+- `BYTECODE_API_URL`: URL of the bytecode detector service (default: `http://localhost:8000`)
+- `LOG_LEVEL`: Logging level (default: `INFO`)
+- `PYTHONPATH`: Python path (default: current directory)
+
+#### API Endpoints
+- `GET /health` - Service health check
+- `POST /analyze/bytecode` - Bytecode-only analysis
+- `POST /analyze/multimodel` - Multi-model comprehensive analysis
+- `GET /models/status` - Model availability status
+
+### Docker Deployment Features
+- Multi-stage build for optimized image size
+- Health checks and monitoring
+- Log persistence to mounted volumes
+- Automatic restarts on failure
+
 ## 📈 Performance Targets
 
 - **Accuracy**: >98% on final risk assessment
