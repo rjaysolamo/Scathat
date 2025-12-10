@@ -620,7 +620,7 @@ export default function ScannerInterface() {
 
         {/* Footer */}
         <div className="mt-12 text-center text-xs text-muted-foreground">
-          <p>Powered by Venice.ai + AgentKit</p>
+          <p>Powered by Scathat</p>
         </div>
       </div>
     </div>
