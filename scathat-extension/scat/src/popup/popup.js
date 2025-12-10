@@ -590,7 +590,7 @@ class ScathatPopup {
             position: fixed;
             top: 10px;
             right: 10px;
-            background: #ff4757;
+            background: hsl(0 84% 60%);
             color: white;
             padding: 10px 15px;
             border-radius: 5px;

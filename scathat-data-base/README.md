@@ -159,7 +159,7 @@ db.store_bytecode_pattern(
 # Store exploit vector
 exploit_vector = list(np.random.rand(384))
 db.store_exploit_vector(
-    exploit_id="flashloan_attack_2024_001",
+    exploit_id="flashloan_attack_2054_001",
     embedding=exploit_vector,
     exploit_type="flashloan_attack", 
     risk_score=0.95,

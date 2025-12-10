@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { PDFDocument, StandardFonts, rgb } from "pdf-lib"
 import { CheckCircle2, AlertTriangle, AlertCircle, Loader2, Zap, Check, X } from "lucide-react"
 
 type ScanStatus = "idle" | "scanning" | "safe" | "warning" | "dangerous"
@@ -375,6 +376,115 @@ export default function ScannerInterface() {
     setScanProgress(0)
   }
 
+  const handleDownloadReport = async () => {
+    if (!result) return
+    const pdfDoc = await PDFDocument.create()
+    const firstPage = pdfDoc.addPage([595.28, 841.89])
+    let currentPage = firstPage
+    const { width, height } = currentPage.getSize()
+    const font = await pdfDoc.embedFont(StandardFonts.Helvetica)
+    const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
+    const margin = 50
+    const maxWidth = width - margin * 2
+    let y = height - margin
+
+    const drawText = (text: string, size = 12, bold = false, color = rgb(0, 0, 0)) => {
+      currentPage.drawText(text, { x: margin, y, size, font: bold ? fontBold : font, color })
+      y -= size + 6
+    }
+
+    const wrapLines = (text: string, size = 12) => {
+      const words = text.split(" ")
+      let line = ""
+      const lines: string[] = []
+      for (const w of words) {
+        const test = line ? line + " " + w : w
+        if (font.widthOfTextAtSize(test, size) <= maxWidth) {
+          line = test
+        } else {
+          if (line) lines.push(line)
+          line = w
+        }
+      }
+      if (line) lines.push(line)
+      return lines
+    }
+
+    const ensureSpace = (needed = 24) => {
+      if (y < margin + needed) {
+        currentPage = pdfDoc.addPage([595.28, 841.89])
+        const size = currentPage.getSize()
+        y = size.height - margin
+      }
+    }
+
+    drawText("Scathat Security Report", 18, true, rgb(0.2, 0.2, 0.2))
+    drawText(`Contract Address: ${contractAddress || "N/A"}`, 12, false, rgb(0.1, 0.1, 0.1))
+    drawText(`Contract Name: ${result.contractName || "N/A"}`)
+    drawText(`Risk Score: ${result.riskScore}/100`)
+    drawText(`Status: ${result.status.toUpperCase()}`)
+    drawText(`Scan Time: ${result.scanTime}s`)
+    drawText(`Lines Analyzed: ${result.linesAnalyzed}`)
+
+    ensureSpace()
+    drawText("Recommendation", 14, true)
+    const recLines = wrapLines(result.recommendation, 12)
+    for (const line of recLines) {
+      ensureSpace()
+      currentPage.drawText(line, { x: margin, y, size: 12, font })
+      y -= 18
+    }
+
+    ensureSpace()
+    drawText("Detected Issues", 14, true)
+    if (result.issues.length === 0) {
+      drawText("No issues detected.")
+    } else {
+      for (const issue of result.issues) {
+        ensureSpace()
+        drawText(issue.text, 12, true)
+        const meta = `Severity: ${issue.severity}  |  Category: ${issue.category}`
+        const metaLines = wrapLines(meta, 11)
+        for (const line of metaLines) {
+          ensureSpace()
+          currentPage.drawText(line, { x: margin, y, size: 11, font })
+          y -= 16
+        }
+        const impact = `Impact: ${issue.impact}`
+        const likelihood = `Likelihood: ${issue.likelihood}`
+        for (const line of wrapLines(impact, 11)) {
+          ensureSpace()
+          currentPage.drawText(line, { x: margin, y, size: 11, font })
+          y -= 16
+        }
+        for (const line of wrapLines(likelihood, 11)) {
+          ensureSpace()
+          currentPage.drawText(line, { x: margin, y, size: 11, font })
+          y -= 16
+        }
+        const descLines = wrapLines(issue.description, 11)
+        for (const line of descLines) {
+          ensureSpace()
+          currentPage.drawText(line, { x: margin, y, size: 11, font, color: rgb(0.2, 0.2, 0.2) })
+          y -= 16
+        }
+        y -= 6
+      }
+    }
+
+    const pdfBytes = await pdfDoc.save()
+    const blob = new Blob([pdfBytes], { type: "application/pdf" })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    const namePart = result.contractName ? result.contractName.replace(/\s+/g, "-") : "report"
+    a.href = url
+    a.download = `scathat-${namePart}-${result.riskScore}.pdf`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(url)
+  }
+
   return (
     <div className="min-h-screen bg-background py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-2xl mx-auto">
@@ -601,7 +711,8 @@ export default function ScannerInterface() {
                   Scan Another
                 </button>
                 <button
-                  disabled
+                  onClick={handleDownloadReport}
+                  disabled={!result}
                   className="flex-1 px-4 py-3 border border-border text-foreground rounded-lg font-semibold hover:bg-border/20 transition-colors disabled:opacity-50"
                 >
                   View Full Report

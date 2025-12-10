@@ -278,14 +278,15 @@ class ScathatContent {
     
     tooltip.style.cssText = `
       position: absolute;
-      background: white;
-      border: 1px solid #ccc;
+      background: hsl(195 60% 12%);
+      border: 1px solid hsl(195 40% 20%);
       padding: 10px;
       border-radius: 4px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.3);
       z-index: 10000;
       max-width: 300px;
       font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      color: hsl(180 10% 90%);
     `;
     
     const rect = element.getBoundingClientRect();
@@ -367,14 +368,15 @@ class ScathatContent {
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      background: white;
-      border: 1px solid #ccc;
+      background: hsl(195 60% 12%);
+      border: 1px solid hsl(195 40% 20%);
       padding: 20px;
       border-radius: 8px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
       z-index: 10001;
       max-width: 500px;
       font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      color: hsl(180 10% 90%);
     `;
     
     document.body.appendChild(modal);
@@ -391,7 +393,7 @@ class ScathatContent {
 
   highlightContractElements() {
     this.contractElements.forEach(contract => {
-      contract.element.style.outline = '2px solid #ff6b35';
+      contract.element.style.outline = '2px solid hsl(160 60% 45%)';
       contract.element.style.outlineOffset = '2px';
     });
   }
@@ -737,14 +739,15 @@ class ScathatContent {
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      background: white;
+      background: hsl(195 60% 12%);
       border: 3px solid ${uiData.color};
       padding: 25px;
       border-radius: 12px;
-      box-shadow: 0 8px 32px ${this.hexToRgba(uiData.color, 0.2)};
+      box-shadow: 0 8px 32px ${this.hexToRgba(uiData.color, 0.3)};
       z-index: 10002;
       max-width: 500px;
       font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      color: hsl(180 10% 90%);
     `;
 
     document.body.appendChild(modal);
@@ -881,15 +884,16 @@ class ScathatContent {
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      background: white;
-      border: 2px solid #007bff;
+      background: hsl(195 60% 12%);
+      border: 2px solid hsl(195 40% 20%);
       padding: 30px;
       border-radius: 12px;
-      box-shadow: 0 8px 32px rgba(0, 123, 255, 0.2);
+      box-shadow: 0 8px 32px hsl(160 60% 45% / 0.18);
       z-index: 10001;
       max-width: 400px;
       text-align: center;
       font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      color: hsl(180 10% 90%);
     `;
 
     // Add spinner animation
@@ -898,8 +902,8 @@ class ScathatContent {
       .scathat-loading-spinner {
         width: 40px;
         height: 40px;
-        border: 4px solid #f3f3f3;
-        border-top: 4px solid #007bff;
+        border: 4px solid hsl(195 40% 20%);
+        border-top: 4px solid hsl(160 60% 45%);
         border-radius: 50%;
         animation: scathat-spin 1s linear infinite;
         margin: 0 auto 20px;
@@ -909,7 +913,7 @@ class ScathatContent {
         100% { transform: rotate(360deg); }
       }
       .scathat-loading-subtitle {
-        color: #666;
+        color: hsl(195 20% 55%);
         font-size: 14px;
         margin-top: 10px;
       }
@@ -941,15 +945,16 @@ class ScathatContent {
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      background: white;
-      border: 2px solid #dc3545;
+      background: hsl(195 60% 12%);
+      border: 2px solid hsl(0 84% 60%);
       padding: 25px;
       border-radius: 12px;
-      box-shadow: 0 8px 32px rgba(220, 53, 69, 0.2);
+      box-shadow: 0 8px 32px hsl(0 84% 60% / 0.25);
       z-index: 10001;
       max-width: 450px;
       text-align: center;
       font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      color: hsl(180 10% 90%);
     `;
 
     document.body.appendChild(modal);

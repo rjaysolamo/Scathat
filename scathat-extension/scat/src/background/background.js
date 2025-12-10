@@ -90,7 +90,7 @@ class ScathatBackground {
   showWelcomeNotification() {
     chrome.notifications.create('welcome', {
       type: 'basic',
-      iconUrl: chrome.runtime.getURL('assets/icons/icon-128.png'),
+      iconUrl: chrome.runtime.getURL('assets/icons/logo1.jpg'),
       title: 'Scathat Installed',
       message: 'Your AI-powered smart contract security shield is now active!',
       priority: 2
