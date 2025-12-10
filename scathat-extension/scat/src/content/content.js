@@ -57,9 +57,8 @@ class ScathatContent {
 
       case 'CONNECT_WALLET':
         try {
-          // Check if wallet is available
           if (typeof window.ethereum === 'undefined') {
-            sendResponse({ success: false, error: 'No Ethereum wallet found. Please install MetaMask or another Web3 wallet.' });
+            sendResponse({ success: false, error: 'No Ethereum wallet found.' });
             return true;
           }
 
@@ -87,6 +86,33 @@ class ScathatContent {
         }
         return true;
 
+      case 'GET_WALLETS':
+        try {
+          const wallets = this.getAvailableWallets();
+          sendResponse({ success: true, wallets });
+        } catch (error) {
+          sendResponse({ success: false, error: error.message });
+        }
+        return true;
+
+      case 'CONNECT_WALLET_WITH':
+        try {
+          const { walletName } = message;
+          const provider = this.selectProviderByName(walletName);
+          if (!provider) {
+            sendResponse({ success: false, error: 'Wallet not available' });
+            return true;
+          }
+          const accounts = await provider.request({ method: 'eth_requestAccounts' });
+          const chainId = await provider.request({ method: 'eth_chainId' });
+          const networkInfo = this.getNetworkInfo(parseInt(chainId));
+          sendResponse({ success: true, address: accounts[0], networkInfo });
+        } catch (error) {
+          console.error('Error connecting specific wallet:', error);
+          sendResponse({ success: false, error: error.message });
+        }
+        return true;
+
       case 'INTERCEPT_TRANSACTION':
         try {
           const result = await this.interceptTransaction(message.data);
@@ -101,6 +127,46 @@ class ScathatContent {
         sendResponse({ success: false, error: 'Unknown message type' });
     }
     return true;
+  }
+
+  getAvailableWallets() {
+    const names = new Set();
+    const providers = [];
+    if (typeof window.ethereum !== 'undefined') {
+      if (Array.isArray(window.ethereum.providers)) {
+        providers.push(...window.ethereum.providers);
+      } else {
+        providers.push(window.ethereum);
+      }
+    }
+    if (typeof window.okxwallet !== 'undefined') {
+      providers.push(window.okxwallet);
+    }
+    const wallets = providers.map(p => this.getProviderLabel(p)).filter(Boolean);
+    wallets.forEach(n => names.add(n));
+    if (names.size === 0 && typeof window.ethereum !== 'undefined') names.add('Injected Wallet');
+    return Array.from(names);
+  }
+
+  getProviderLabel(p) {
+    if (!p) return null;
+    if (p.isMetaMask) return 'MetaMask';
+    if (p.isBraveWallet) return 'Brave';
+    if (p.isCoinbaseWallet) return 'Coinbase';
+    if (p.isOkxWallet || p.isOKExWallet || p === window.okxwallet) return 'OKX';
+    return 'Injected Wallet';
+  }
+
+  selectProviderByName(name) {
+    if (typeof window.ethereum !== 'undefined') {
+      const list = Array.isArray(window.ethereum.providers) ? window.ethereum.providers : [window.ethereum];
+      const found = list.find(p => this.getProviderLabel(p) === name);
+      if (found) return found;
+    }
+    if (name === 'OKX' && typeof window.okxwallet !== 'undefined') {
+      return window.okxwallet;
+    }
+    return typeof window.ethereum !== 'undefined' ? window.ethereum : null;
   }
 
   scanPageForContracts() {

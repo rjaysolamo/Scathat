@@ -26,6 +26,7 @@ class ScathatPopup {
         await this.checkWalletConnection();
         this.setupEventListeners();
         this.updateUI();
+        await this.populateWalletSelector();
         
         console.log('Scathat popup initialized');
     }
@@ -46,6 +47,27 @@ class ScathatPopup {
             this.updateSettingsUI();
         } catch (error) {
             console.error('Error loading settings:', error);
+        }
+    }
+
+    async populateWalletSelector() {
+        try {
+            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            if (!tab) return;
+            const response = await chrome.tabs.sendMessage(tab.id, { type: 'GET_WALLETS' });
+            const selector = document.getElementById('walletSelector');
+            if (!selector) return;
+            selector.innerHTML = '<option value="">Select Wallet</option>';
+            if (response && response.success && Array.isArray(response.wallets)) {
+                response.wallets.forEach(name => {
+                    const opt = document.createElement('option');
+                    opt.value = name;
+                    opt.textContent = name;
+                    selector.appendChild(opt);
+                });
+            }
+        } catch (e) {
+            console.warn('Wallet discovery failed:', e.message);
         }
     }
 
@@ -258,9 +280,12 @@ class ScathatPopup {
                 return;
             }
 
-            const response = await chrome.tabs.sendMessage(tab.id, {
-                type: 'CONNECT_WALLET'
-            });
+            const selector = document.getElementById('walletSelector');
+            const chosen = selector?.value || '';
+            const response = await chrome.tabs.sendMessage(tab.id, chosen
+                ? { type: 'CONNECT_WALLET_WITH', walletName: chosen }
+                : { type: 'CONNECT_WALLET' }
+            );
 
             if (response && response.success) {
                 this.walletConnected = true;

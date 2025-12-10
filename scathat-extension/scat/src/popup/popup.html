@@ -38,9 +38,14 @@
                 </div>
                 
                 <div class="wallet-actions">
-                    <button id="connectWalletBtn" class="btn btn-primary">
-                        Connect Wallet
-                    </button>
+                    <div class="wallet-connect-row">
+                        <select id="walletSelector" class="input-field" style="max-width: 180px;">
+                            <option value="">Select Wallet</option>
+                        </select>
+                        <button id="connectWalletBtn" class="btn btn-primary">
+                            Connect Wallet
+                        </button>
+                    </div>
                     <button id="disconnectWalletBtn" class="btn btn-secondary" style="display: none;">
                         Disconnect Wallet
                     </button>
