@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Scathat - Smart Contract Security",
+  "name": "Scathat",
   "version": "1.0.0",
   "description": "AI-powered real-time smart contract analysis and security protection",
   "permissions": [
@@ -13,7 +13,8 @@
   ],
   "host_permissions": [
     "*://*/*",
-    "<all_urls>"
+    "<all_urls>",
+    "about:blank"
   ],
   "background": {
     "service_worker": "src/background/background.js",
@@ -22,7 +23,7 @@
   "content_scripts": [
     {
       "matches": ["*://*/*"],
-      "js": ["src/content/riskEngine.js", "src/content/content.js"],
+      "js": ["src/content/content.js"],
       "run_at": "document_idle"
     }
   ],
@@ -30,17 +31,17 @@
     "default_popup": "src/popup/popup.html",
     "default_title": "Scathat Security",
     "default_icon": {
-      "16": "assets/icons/logo1.jpg",
-      "32": "assets/icons/logo1.jpg",
-      "48": "assets/icons/logo1.jpg",
-      "128": "assets/icons/logo1.jpg"
+      "16": "assets/icons/icon-16.png",
+      "32": "assets/icons/icon-32.png",
+      "48": "assets/icons/icon-48.png",
+      "128": "assets/icons/icon-128.png"
     }
   },
   "icons": {
-    "16": "assets/icons/logo1.jpg",
-    "32": "assets/icons/logo1.jpg",
-    "48": "assets/icons/logo1.jpg",
-    "128": "assets/icons/logo1.jpg"
+    "16": "assets/icons/icon-16.png",
+    "32": "assets/icons/icon-32.png",
+    "48": "assets/icons/icon-48.png",
+    "128": "assets/icons/icon-128.png"
   },
   "web_accessible_resources": [
     {

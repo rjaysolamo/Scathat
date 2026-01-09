@@ -10,7 +10,12 @@ class ScathatPopup {
             savedFunds: 0
         };
         
-        // Wallet functionality removed
+        // Wallet connection properties
+        this.walletDetected = false;
+        this.walletConnected = false;
+        this.walletAccounts = [];
+        this.walletSignature = null;
+        this.contractAuthorized = false;
         
         this.init();
     }
@@ -18,8 +23,10 @@ class ScathatPopup {
     async init() {
         await this.loadSettings();
         await this.checkConnectionStatus();
+        await this.checkWalletStatus();
         this.setupEventListeners();
         this.updateUI();
+        this.updateWalletUI();
         
         console.log('Scathat popup initialized');
     }
@@ -61,11 +68,19 @@ class ScathatPopup {
 
     setupEventListeners() {
         document.getElementById('connectBtn').addEventListener('click', async () => {
-            await this.connect();
+            await this.connectWallet();
         });
 
         document.getElementById('disconnectBtn').addEventListener('click', async () => {
             await this.disconnect();
+        });
+
+        document.getElementById('connectWalletBtn').addEventListener('click', async () => {
+            await this.connectWallet();
+        });
+
+        document.getElementById('disconnectWalletBtn').addEventListener('click', async () => {
+            await this.disconnectWallet();
         });
 
         document.getElementById('scanCurrentPage').addEventListener('click', async () => {
@@ -111,8 +126,7 @@ class ScathatPopup {
 
     async connect() {
         try {
-            const apiKey = (document.getElementById('apiKey').value || '').trim();
-            const result = await chrome.runtime.sendMessage({ type: 'CONNECT', data: { apiKey } });
+            const result = await chrome.runtime.sendMessage({ type: 'CONNECT' });
             if (result && result.success) {
                 this.connected = true;
                 this.sessionId = result.sessionId;
@@ -138,6 +152,163 @@ class ScathatPopup {
             console.error('Disconnect error:', error);
         }
         this.updateUI();
+    }
+
+    // Wallet connection methods
+    async checkWalletStatus() {
+        try {
+            // Send message to background script to check wallet status
+            const response = await chrome.runtime.sendMessage({ type: 'GET_WALLET_STATUS' });
+            this.walletDetected = response?.detected || false;
+            this.walletConnected = response?.connected || false;
+            this.walletAccounts = response?.accounts || [];
+        } catch (error) {
+            console.log('No wallet detected or content script not ready:', error.message);
+            this.walletDetected = false;
+            this.walletConnected = false;
+            this.walletAccounts = [];
+        }
+    }
+
+    async connectWallet() {
+        try {
+            const response = await chrome.runtime.sendMessage({ type: 'CONNECT_WALLET' });
+            if (response.success) {
+                this.walletConnected = true;
+                this.addActivity('Wallet connected successfully', 'connect');
+                
+                // After connecting, try to sign a message for authentication
+                await this.signAuthenticationMessage();
+            } else {
+                this.showError('Wallet connection failed: ' + response.error);
+            }
+        } catch (error) {
+            console.error('Wallet connection error:', error);
+            this.showError('Wallet connection error: ' + error.message);
+        }
+        this.updateWalletUI();
+    }
+
+    // Sign an authentication message to prove wallet ownership
+    async signAuthenticationMessage() {
+        try {
+            const message = `Scathat Authentication: ${Date.now()}`;
+            const response = await chrome.runtime.sendMessage({ 
+                type: 'SIGN_MESSAGE', 
+                data: message 
+            });
+            
+            if (response.success) {
+                console.log('Authentication signature:', response.signature);
+                this.addActivity('Wallet authentication successful', 'security');
+                
+                // Store the signature for future contract interactions
+                this.walletSignature = response.signature;
+                
+                // Check if we can interact with the smart contract
+                await this.checkContractAuthorization();
+            } else {
+                this.showError('Authentication failed: ' + response.error);
+            }
+        } catch (error) {
+            console.error('Authentication error:', error);
+            this.showError('Authentication error: ' + error.message);
+        }
+    }
+
+    // Check if wallet is authorized to interact with the smart contract
+    async checkContractAuthorization() {
+        try {
+            // This would be implemented to check against the smart contract
+            // For now, we'll simulate the check
+            const isAuthorized = true; // Simulated authorization check
+            
+            if (isAuthorized) {
+                this.addActivity('Contract access authorized', 'contract');
+                this.contractAuthorized = true;
+            } else {
+                this.addActivity('Contract access not authorized', 'warning');
+                this.contractAuthorized = false;
+            }
+        } catch (error) {
+            console.error('Authorization check failed:', error);
+            this.contractAuthorized = false;
+        }
+    }
+
+    // Interact with smart contract (example method)
+    async interactWithContract() {
+        try {
+            if (!this.walletConnected) {
+                throw new Error('Wallet not connected');
+            }
+
+            if (!this.contractAuthorized) {
+                throw new Error('Not authorized to interact with contract');
+            }
+
+            // Example contract interaction data
+            const transactionData = {
+                from: this.walletAccounts[0],
+                to: '0x8dCcDf8Be8B32492896281413B45e075B1f5EDe5', // Contract address
+                value: '0x0', // No value transfer
+                data: '0x12345678' // Example contract call data
+            };
+
+            const response = await chrome.runtime.sendMessage({
+                type: 'INTERACT_WITH_CONTRACT',
+                data: transactionData
+            });
+
+            if (response.success) {
+                this.addActivity('Contract interaction successful', 'contract');
+                return response.result;
+            } else {
+                throw new Error(response.error);
+            }
+        } catch (error) {
+            console.error('Contract interaction failed:', error);
+            this.showError('Contract interaction failed: ' + error.message);
+            throw error;
+        }
+    }
+
+    async disconnectWallet() {
+        // For Ethereum wallets, disconnection is typically handled by the wallet itself
+        // We just update our local state
+        this.walletConnected = false;
+        this.walletAccounts = [];
+        this.addActivity('Wallet disconnected', 'disconnect');
+        this.updateWalletUI();
+    }
+
+    updateWalletUI() {
+        const walletStatus = document.getElementById('walletStatus');
+        const walletDot = walletStatus.querySelector('.wallet-dot');
+        const walletText = walletStatus.querySelector('.wallet-text');
+        const connectBtn = document.getElementById('connectWalletBtn');
+        const disconnectBtn = document.getElementById('disconnectWalletBtn');
+
+        if (this.walletConnected) {
+            walletDot.classList.add('connected');
+            walletDot.classList.remove('detected');
+            walletText.textContent = this.walletAccounts.length > 0 
+                ? `Connected: ${this.walletAccounts[0].slice(0, 8)}...`
+                : 'Wallet Connected';
+            connectBtn.style.display = 'none';
+            disconnectBtn.style.display = '';
+        } else if (this.walletDetected) {
+            walletDot.classList.add('detected');
+            walletDot.classList.remove('connected');
+            walletText.textContent = 'Wallet Detected';
+            connectBtn.style.display = '';
+            disconnectBtn.style.display = 'none';
+        } else {
+            walletDot.classList.remove('connected', 'detected');
+            walletText.textContent = 'No Wallet Found';
+            connectBtn.style.display = 'none';
+            disconnectBtn.style.display = 'none';
+        }
     }
 
     async scanCurrentPage() {
