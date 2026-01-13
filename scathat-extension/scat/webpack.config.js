@@ -30,7 +30,18 @@ module.exports = {
   plugins: [
     new CopyWebpackPlugin({
       patterns: [
-        { from: 'manifest.json', to: 'manifest.json' },
+        { 
+          from: 'manifest.json', 
+          to: 'manifest.json',
+          transform: (content) => {
+            const manifest = JSON.parse(content.toString());
+            // Update paths for dist folder
+            manifest.background.service_worker = 'background.js';
+            manifest.content_scripts[0].js = ['content.js'];
+            manifest.action.default_popup = 'popup.html';
+            return JSON.stringify(manifest, null, 2);
+          }
+        },
         { from: 'src/popup/popup.html', to: 'popup.html' },
         { from: 'src/popup/popup.css', to: 'popup.css' },
         { from: 'assets', to: 'assets' }
