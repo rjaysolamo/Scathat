@@ -21,21 +21,20 @@
   },
   "host_permissions": [
     "*://*/*",
-    "<all_urls>",
-    "about:blank"
+    "<all_urls>"
   ],
   "background": {
-    "service_worker": "src/background/background.js"
+    "service_worker": "background.js"
   },
   "content_scripts": [
     {
       "matches": ["*://*/*"],
-      "js": ["src/content/content.js"],
+      "js": ["content.js"],
       "run_at": "document_idle"
     }
   ],
   "action": {
-    "default_popup": "src/popup/popup.html",
+    "default_popup": "popup.html",
     "default_title": "Scathat Security",
     "default_icon": {
       "16": "assets/icons/icon-16.png",
