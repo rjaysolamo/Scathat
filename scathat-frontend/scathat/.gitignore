@@ -199,6 +199,11 @@ out/
 .nuxt
 dist
 
+package-lock.json
+package.json
+postcss.config.js
+tsconfig.tsbuildinfo
+
 # Gatsby files
 .cache/
 public
