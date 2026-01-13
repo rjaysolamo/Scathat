@@ -140,16 +140,6 @@ class ScathatPopup {
         document.getElementById('highlightToggle').addEventListener('change', (e) => {
             this.updateSetting('highlightContracts', e.target.checked);
         });
-        
-        document.getElementById('helpLink').addEventListener('click', (e) => {
-            e.preventDefault();
-            this.openHelp();
-        });
-        
-        document.getElementById('feedbackLink').addEventListener('click', (e) => {
-            e.preventDefault();
-            this.openFeedback();
-        });
     }
 
     async checkConnectionStatus() {
@@ -529,18 +519,6 @@ class ScathatPopup {
                 errorDiv.parentNode.removeChild(errorDiv);
             }
         }, 3000);
-    }
-
-    openHelp() {
-        chrome.tabs.create({
-            url: 'https://docs.scathat.com/extension-help'
-        });
-    }
-
-    openFeedback() {
-        chrome.tabs.create({
-            url: 'https://github.com/scathat/extension/issues'
-        });
     }
 }
 

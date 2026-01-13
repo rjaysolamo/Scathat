@@ -84,7 +84,7 @@ class ScathatBackground {
       
       // Allow localhost for development and production domain
       const allowedOrigins = [
-        'https://scathat.com',
+        'https://scathat.vercel.app',
         'http://localhost:3000',
         'http://localhost'
       ];
@@ -117,30 +117,15 @@ class ScathatBackground {
   // Keep service worker alive to receive external messages
   startKeepAlive() {
     this.keepAliveInterval = setInterval(() => {
-      // More aggressive keep-alive to prevent service worker from going inactive
+      // Simple keep-alive to prevent service worker from going inactive
       console.log('Service worker keep-alive ping');
-      // Send a message to ourselves to keep the service worker active
-      chrome.runtime.sendMessage({ type: 'KEEP_ALIVE_PING' }).catch(() => {
+      // Use a simple storage operation to keep service worker alive
+      chrome.storage.local.get(['settings']).then(() => {
+        // Storage operation successful - service worker is active
+      }).catch(() => {
         // Ignore errors - this is just to keep the service worker active
       });
-      // Also check if we can receive external messages
-      this.testExternalMessaging();
-    }, 10000); // Ping every 10 seconds to prevent inactivity
-  }
-
-  testExternalMessaging() {
-    // Test if external messaging is working by sending a test message to ourselves
-    chrome.runtime.sendMessage(
-      chrome.runtime.id,
-      { type: 'TEST_MESSAGE', timestamp: Date.now() },
-      (response) => {
-        if (chrome.runtime.lastError) {
-          console.log('Internal messaging test failed:', chrome.runtime.lastError);
-        } else {
-          console.log('Internal messaging test successful');
-        }
-      }
-    );
+    }, 30000); // Ping every 30 seconds to prevent inactivity
   }
 
   stopKeepAlive() {
@@ -163,7 +148,7 @@ class ScathatBackground {
       }
     });
 
-    // Forward wallet state to popup
+    // Forward wallet state to popup (if popup is open)
     chrome.runtime.sendMessage({
       type: 'WALLET_STATE_UPDATE',
       walletConnected: message.walletConnected,
@@ -172,7 +157,8 @@ class ScathatBackground {
     }).then(() => {
       console.log('Wallet state forwarded to popup successfully');
     }).catch(error => {
-      console.log('Popup not available for wallet state update:', error);
+      // This is normal - popup is not always open
+      console.debug('Popup not available for wallet state update (normal behavior)');
     });
   }
 
