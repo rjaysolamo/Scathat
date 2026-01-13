@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { CheckCircle2, AlertTriangle, AlertCircle, Loader2, Zap, Check, X, Wallet } from "lucide-react"
+import Image from "next/image"
+import { CheckCircle2, AlertTriangle, AlertCircle, Loader2, Check, X, Wallet } from "lucide-react"
 
 // Type declarations for Ethereum provider and Chrome extension
 declare global {
@@ -531,9 +532,7 @@ export default function ScannerInterface() {
         {/* Branding */}
         <div className="text-center mb-12">
           <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
-              <Zap className="w-5 h-5 text-primary-foreground" />
-            </div>
+            <Image src="/logo1.jpg" alt="Scathat logo" width={40} height={40} priority className="rounded-lg" />
             <h1 className="text-3xl font-bold text-foreground">Scathat Scanner</h1>
           </div>
           <p className="text-muted-foreground text-sm">Real-Time AI Smart Contract Security</p>
