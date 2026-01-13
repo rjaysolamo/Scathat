@@ -23,7 +23,6 @@ class ScathatBackground {
   setupListeners() {
     console.log('Setting up extension listeners...');
     
-    // Handle service worker activation
     chrome.runtime.onStartup.addListener(() => {
       console.log('Extension started up - reinitializing service worker');
       this.init();
@@ -35,10 +34,9 @@ class ScathatBackground {
     });
 
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-      // Handle wallet events from content script
       if (message.type === 'WALLET_EVENT') {
         this.handleWalletEvent(message.event, message.data);
-        return false; // No response needed for events
+        return false; 
       }
       switch (message.type) {
         case 'CONNECT':
@@ -80,7 +78,6 @@ class ScathatBackground {
       }
     });
 
-    // Listen for external messages from frontend website
     console.log('Setting up external message listener...');
     chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => {
       console.log('Received external message:', { message, sender: sender.url });
@@ -102,8 +99,12 @@ class ScathatBackground {
             this.handleWalletStateUpdate(message);
             sendResponse({ success: true });
             return true;
+          case 'WALLET_EVENT':
+            console.log('Processing WALLET_EVENT message:', message.event);
+            this.handleWalletEvent(message);
+            sendResponse({ success: true });
+            return true;
           case 'KEEP_ALIVE_PING':
-            // Just respond to keep service worker active
             sendResponse({ success: true, pong: true });
             return true;
           default:
@@ -113,22 +114,17 @@ class ScathatBackground {
         }
       }
       console.log('Message from disallowed origin:', sender.url);
-      return false; // Not from allowed origin
+      return false; 
     });
   }
 
-  // Keep service worker alive to receive external messages
   startKeepAlive() {
     this.keepAliveInterval = setInterval(() => {
-      // Simple keep-alive to prevent service worker from going inactive
       console.log('Service worker keep-alive ping');
-      // Use a simple storage operation to keep service worker alive
       chrome.storage.local.get(['settings']).then(() => {
-        // Storage operation successful - service worker is active
       }).catch(() => {
-        // Ignore errors - this is just to keep the service worker active
       });
-    }, 30000); // Ping every 30 seconds to prevent inactivity
+    }, 30000); 
   }
 
   stopKeepAlive() {
@@ -141,7 +137,6 @@ class ScathatBackground {
   handleWalletStateUpdate(message) {
     console.log('Received wallet state update from frontend:', message);
     
-    // Save wallet state to storage
     chrome.storage.local.set({
       walletState: {
         connected: message.walletConnected,
@@ -151,16 +146,60 @@ class ScathatBackground {
       }
     });
 
-    // Forward wallet state to popup (if popup is open)
+    this.forwardWalletStateToPopup(message.walletConnected, message.accounts, message.chainId);
+  }
+
+  handleWalletEvent(message) {
+    console.log('Handling wallet event:', message.event, message.data);
+    
+    let walletConnected = false;
+    let accounts = [];
+    let chainId = "";
+    
+    switch (message.event) {
+      case 'CONNECTED':
+        walletConnected = true;
+        accounts = message.data.accounts || [];
+        chainId = message.data.chainId || "";
+        break;
+        
+      case 'ACCOUNTS_CHANGED':
+        walletConnected = message.data.accounts && message.data.accounts.length > 0;
+        accounts = message.data.accounts || [];
+        break;
+        
+      case 'CHAIN_CHANGED':
+        chainId = message.data.chainId || "";
+        break;
+        
+      case 'DISCONNECTED':
+        walletConnected = false;
+        accounts = [];
+        break;
+    }
+    
+    // Save the updated wallet state
+    chrome.storage.local.set({
+      walletState: {
+        connected: walletConnected,
+        accounts: accounts,
+        chainId: chainId,
+        timestamp: Date.now()
+      }
+    });
+    
+    this.forwardWalletStateToPopup(walletConnected, accounts, chainId);
+  }
+  
+  forwardWalletStateToPopup(walletConnected, accounts, chainId) {
     chrome.runtime.sendMessage({
       type: 'WALLET_STATE_UPDATE',
-      walletConnected: message.walletConnected,
-      accounts: message.accounts || [],
-      chainId: message.chainId || ""
+      walletConnected: walletConnected,
+      accounts: accounts || [],
+      chainId: chainId || ""
     }).then(() => {
       console.log('Wallet state forwarded to popup successfully');
     }).catch(error => {
-      // This is normal - popup is not always open
       console.debug('Popup not available for wallet state update (normal behavior)');
     });
   }

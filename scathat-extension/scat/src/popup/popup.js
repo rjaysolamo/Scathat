@@ -517,6 +517,24 @@ class ScathatPopup {
         document.getElementById('savedFunds').textContent = `$${this.stats.savedFunds}`;
     }
 
+    updateSettingsUI() {
+        const autoScanToggle = document.getElementById('autoScanToggle');
+        const notificationsToggle = document.getElementById('notificationsToggle');
+        const highlightToggle = document.getElementById('highlightToggle');
+        
+        if (autoScanToggle) {
+            autoScanToggle.checked = this.settings.autoScan !== false; 
+        }
+        
+        if (notificationsToggle) {
+            notificationsToggle.checked = this.settings.notifications !== false;
+        }
+        
+        if (highlightToggle) {
+            highlightToggle.checked = this.settings.highlightContracts !== false; 
+        }
+    }
+
     addActivity(text, type) {
         const item = document.createElement('div');
         item.className = 'activity-item';
