@@ -49,7 +49,10 @@ const Header = () => {
             ))}
           </nav>
 
-          <div className="hidden md:flex items-center">
+          <div className="hidden md:flex items-center gap-3">
+            <a href="/" className="inline-block">
+              <Button size="sm" variant="secondary">Back Home</Button>
+            </a>
             <Button size="sm" className="glow-primary">Get Started</Button>
           </div>
 
@@ -75,6 +78,9 @@ const Header = () => {
                 </a>
               ))}
               <div className="pt-4 border-t border-border/50">
+                <a href="/" className="block mb-3">
+                  <Button size="sm" className="w-full" variant="secondary">Back Home</Button>
+                </a>
                 <Button size="sm" className="w-full glow-primary">Get Started</Button>
               </div>
             </nav>
