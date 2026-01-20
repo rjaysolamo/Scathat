@@ -3,13 +3,12 @@ import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { Menu, X } from "lucide-react";
 
-const navLinks = [
-  { label: "About", href: "#learn-more" },
-  { label: "How It Works", href: "#how-it-works" },
-  { label: "Pricing", href: "#pricing" },
-  { label: "Try Scan", href: "/try-scan" },
-  { label: "Contact", href: "#contact-us" },
-];
+//const navLinks = [
+  //{ label: "About", href: "#learn-more" },
+
+  
+  
+//];
 
 const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -41,17 +40,20 @@ const Header = () => {
             <span className="text-xl font-bold text-foreground">Scathat</span>
           </a>
 
-          <nav className="hidden md:flex items-center gap-8">
-            {navLinks.map((link) => (
-              <a
-                key={link.label}
-                href={link.href}
-                className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
-              >
-                {link.label}
-              </a>
-            ))}
-          </nav>
+        {/* 
+<nav className="hidden md:flex items-center gap-8">
+  {navLinks.map((link) => (
+    <a
+      key={link.label}
+      href={link.href}
+      className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+    >
+      {link.label}
+    </a>
+  ))}
+</nav>
+*/}
+
 
           <div className="hidden md:flex items-center">
             <Button size="sm" className="glow-primary" onClick={() => window.location.href = '/try-scan'}>Connect Wallet</Button>
@@ -68,16 +70,19 @@ const Header = () => {
         {isMobileMenuOpen && (
           <div className="md:hidden py-4 border-t border-border/50">
             <nav className="flex flex-col gap-4">
-              {navLinks.map((link) => (
-                <a
-                  key={link.label}
-                  href={link.href}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors py-2"
-                >
-                  {link.label}
-                </a>
-              ))}
+           {/*
+navLinks.map((link) => (
+  <a
+    key={link.label}
+    href={link.href}
+    onClick={() => setIsMobileMenuOpen(false)}
+    className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors py-2"
+  >
+    {link.label}
+  </a>
+))
+*/}
+
               <div className="pt-4 border-t border-border/50">
                 <Button size="sm" className="w-full glow-primary" onClick={() => window.location.href = '/try-scan'}>Connect Wallet</Button>
               </div>

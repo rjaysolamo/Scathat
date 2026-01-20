@@ -1,4 +1,3 @@
-import { Button } from "@/components/ui/button";
 import { Shield } from "lucide-react";
 
 const HeroSection = () => {
@@ -26,15 +25,6 @@ const HeroSection = () => {
             The promise of decentralization is undermined when trust is repeatedly broken by bad actors. 
             We believe it&apos;s time for a new paradigm in Web3 security.
           </p>
-
-          <div className="flex flex-wrap gap-4">
-            <Button size="lg" className="glow-primary">
-              Learn More
-            </Button>
-            <Button size="lg" variant="outline" className="border-primary/50 text-primary hover:bg-primary/10">
-              Contact Us
-            </Button>
-          </div>
         </div>
       </div>
     </section>
