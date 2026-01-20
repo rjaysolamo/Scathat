@@ -2,15 +2,15 @@
   "version": 3,
   "builds": [
     {
-      "src": "scathat/package.json",
+      "src": "scathat-frontend/scathat/package.json",
       "use": "@vercel/next"
     }
   ],
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "scathat/$1"
+      "dest": "scathat-frontend/scathat/$1"
     }
   ],
-  "outputDirectory": "scathat/.next"
+  "outputDirectory": "scathat-frontend/scathat/.next"
 }
