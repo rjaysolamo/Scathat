@@ -455,7 +455,7 @@ export default function ScannerInterface() {
     
     try {
       // Your actual extension ID
-      const extensionId = 'cbjglphdciillhmiolfgklamaffcnbln';
+      const extensionId = 'dlkemhllnnbnnapmlcepggaggaaoijha';
       
       console.log('Sending message to extension:', { extensionId, message });
       

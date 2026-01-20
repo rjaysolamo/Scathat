@@ -17,13 +17,13 @@ const steps = [
     icon: Brain,
     step: 3,
     title: "AI Analysis",
-    description: "AI queries BaseScan and assesses risk"
+    description: "AI queries Onchain data and assesses risk"
   },
   {
     icon: Bell,
     step: 4,
     title: "Enforce & Notify",
-    description: "AgentKit enforces actions; user sees label"
+    description: "Onchain AI Agentenforces actions; user sees label"
   }
 ];
 

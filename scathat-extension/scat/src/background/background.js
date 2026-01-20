@@ -75,6 +75,9 @@ class ScathatBackground {
         case 'SEND_TRANSACTION':
           this.handleSendTransaction(sender.tab?.id, message.data).then((res) => sendResponse(res));
           return true;
+        case 'ANALYZE_CONTRACT_AI':
+          this.analyzeContractWithAI(message.data.contractAddress, message.data.transactionData).then((res) => sendResponse(res));
+          return true;
       }
     });
 
@@ -102,6 +105,11 @@ class ScathatBackground {
           case 'WALLET_EVENT':
             console.log('Processing WALLET_EVENT message:', message.event);
             this.handleWalletEvent(message);
+            sendResponse({ success: true });
+            return true;
+          case 'CONTRACT_INTERACTION':
+            console.log('Processing CONTRACT_INTERACTION message:', message.data);
+            this.handleContractInteraction(message.data);
             sendResponse({ success: true });
             return true;
           case 'KEEP_ALIVE_PING':
@@ -752,6 +760,356 @@ class ScathatBackground {
     }
   }
 
+  // Handle contract interaction detection
+  async handleContractInteraction(contractData) {
+    try {
+      console.log('Contract interaction detected:', contractData);
+      
+      // Store contract interaction in storage
+      const result = await chrome.storage.local.get(['contractInteractions']);
+      const interactions = result.contractInteractions || [];
+      
+      // Add new interaction with timestamp
+      interactions.unshift({
+        ...contractData,
+        timestamp: Date.now(),
+        id: crypto.randomUUID()
+      });
+      
+      // Keep only last 100 interactions
+      const recentInteractions = interactions.slice(0, 100);
+      
+      await chrome.storage.local.set({
+        contractInteractions: recentInteractions
+      });
+      
+      // Notify popup about new contract interaction
+      try {
+        await chrome.runtime.sendMessage({
+          type: 'CONTRACT_INTERACTION_DETECTED',
+          data: contractData
+        });
+      } catch (error) {
+        // Popup might not be listening, which is fine
+      }
+      
+      // If auto-scan is enabled, automatically scan the contract
+      const settingsResult = await chrome.storage.local.get(['settings']);
+      if (settingsResult.settings?.autoScan) {
+        await this.scanDetectedContract(contractData.contractAddress);
+      }
+      
+      console.log('Contract interaction processed successfully');
+      return { success: true };
+      
+    } catch (error) {
+      console.error('Failed to handle contract interaction:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Scan a detected contract for security risks with AI agent integration
+  async scanDetectedContract(contractAddress) {
+    try {
+      console.log('Auto-scanning contract with AI analysis:', contractAddress);
+      
+      // Call the API to scan the contract with AI analysis
+      const scanResult = await this.scanContract({ 
+        address: contractAddress,
+        ai_analysis: true,
+        verify_contract: true
+      });
+      
+      if (scanResult.success) {
+        // Store scan result with AI analysis
+        const result = await chrome.storage.local.get(['contractScans']);
+        const scans = result.contractScans || {};
+        
+        scans[contractAddress] = {
+          ...scanResult.result,
+          lastScanned: Date.now(),
+          verification_status: scanResult.result.verification_status || 'unknown',
+          ai_analysis: scanResult.result.ai_analysis || {}
+        };
+        
+        await chrome.storage.local.set({ contractScans: scans });
+        
+        // Notify about scan completion with AI results
+        try {
+          await chrome.runtime.sendMessage({
+            type: 'CONTRACT_SCAN_COMPLETE',
+            data: {
+              address: contractAddress,
+              result: scanResult.result,
+              verification_status: scanResult.result.verification_status,
+              ai_analysis: scanResult.result.ai_analysis
+            }
+          });
+        } catch (error) {
+          // Popup might not be listening
+        }
+        
+        // Show appropriate notification based on verification status and threats
+        await this.showContractAnalysisNotification(contractAddress, scanResult.result);
+      }
+      
+      return scanResult;
+      
+    } catch (error) {
+      console.error('Contract scan with AI analysis failed:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Enhanced contract analysis with AI agent integration
+  async analyzeContractWithAI(contractAddress, transactionData = null) {
+    try {
+      console.log('Analyzing contract with AI agent:', contractAddress);
+      
+      // Connect to AI agent models for comprehensive analysis
+      const aiAnalysis = await this.callAIAgentAnalysis(contractAddress, transactionData);
+      
+      // Determine verification status
+      const verificationStatus = await this.determineVerificationStatus(contractAddress, aiAnalysis);
+      
+      // Check for malicious code patterns
+      const maliciousCodeAnalysis = await this.detectMaliciousCode(aiAnalysis);
+      
+      // Store AI analysis results
+      const result = await chrome.storage.local.get(['contractAIAnalysis']);
+      const analyses = result.contractAIAnalysis || {};
+      
+      analyses[contractAddress] = {
+        verification_status: verificationStatus,
+        malicious_code_detected: maliciousCodeAnalysis.detected,
+        malicious_patterns: maliciousCodeAnalysis.patterns,
+        ai_analysis: aiAnalysis,
+        analyzed_at: Date.now(),
+        transaction_context: transactionData
+      };
+      
+      await chrome.storage.local.set({ contractAIAnalysis: analyses });
+      
+      // Send AI analysis results to popup
+      try {
+        await chrome.runtime.sendMessage({
+          type: 'AI_ANALYSIS_COMPLETE',
+          data: {
+            address: contractAddress,
+            verification_status: verificationStatus,
+            malicious_code_detected: maliciousCodeAnalysis.detected,
+            malicious_patterns: maliciousCodeAnalysis.patterns,
+            ai_analysis: aiAnalysis
+          }
+        });
+      } catch (error) {
+        // Popup might not be listening
+      }
+      
+      return {
+        success: true,
+        verification_status: verificationStatus,
+        malicious_code_detected: maliciousCodeAnalysis.detected,
+        malicious_patterns: maliciousCodeAnalysis.patterns,
+        ai_analysis: aiAnalysis
+      };
+      
+    } catch (error) {
+      console.error('AI agent analysis failed:', error);
+      return { 
+        success: false, 
+        error: error.message,
+        verification_status: 'error',
+        malicious_code_detected: false
+      };
+    }
+  }
+
+  // Connect to AI agent models for contract analysis
+  async callAIAgentAnalysis(contractAddress, transactionData) {
+    try {
+      // Connect to Scathat AI model containers
+      const response = await fetch('http://localhost:8001/analyze/ai', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contract_address: contractAddress,
+          transaction_data: transactionData,
+          analysis_type: 'comprehensive',
+          include_verification: true,
+          include_malicious_detection: true
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`AI agent analysis failed: ${response.statusText}`);
+      }
+      
+      const analysisResult = await response.json();
+      return analysisResult;
+      
+    } catch (error) {
+      console.warn('AI agent service unavailable, using fallback analysis:', error);
+      
+      // Fallback: Use local analysis if AI services are down
+      return await this.fallbackAIAnalysis(contractAddress, transactionData);
+    }
+  }
+
+  // Determine contract verification status using AI analysis
+  async determineVerificationStatus(contractAddress, aiAnalysis) {
+    try {
+      // Check if contract is verified using AI analysis
+      if (aiAnalysis.verification_status) {
+        return aiAnalysis.verification_status;
+      }
+      
+      // Fallback: Check verification through blockchain explorer API
+      const explorerResponse = await fetch(
+        `https://api.etherscan.io/api?module=contract&action=getsourcecode&address=${contractAddress}&apikey=YOUR_ETHERSCAN_API_KEY`
+      );
+      
+      if (explorerResponse.ok) {
+        const data = await explorerResponse.json();
+        if (data.result && data.result[0] && data.result[0].SourceCode) {
+          return data.result[0].SourceCode !== '' ? 'verified' : 'unverified';
+        }
+      }
+      
+      return 'unknown';
+      
+    } catch (error) {
+      console.warn('Verification status check failed:', error);
+      return 'unknown';
+    }
+  }
+
+  // Detect malicious code patterns using AI analysis
+  async detectMaliciousCode(aiAnalysis) {
+    try {
+      const maliciousPatterns = [];
+      let detected = false;
+      
+      // Check for known malicious patterns in AI analysis
+      if (aiAnalysis.malicious_patterns && aiAnalysis.malicious_patterns.length > 0) {
+        maliciousPatterns.push(...aiAnalysis.malicious_patterns);
+        detected = true;
+      }
+      
+      // Check for high-risk vulnerabilities that could indicate malicious intent
+      if (aiAnalysis.risk_score >= 0.8) {
+        maliciousPatterns.push('high_risk_contract');
+        detected = true;
+      }
+      
+      // Check for specific malicious function patterns
+      if (aiAnalysis.function_analysis) {
+        const suspiciousFunctions = aiAnalysis.function_analysis.filter(
+          func => func.risk_level === 'critical' || func.suspicious === true
+        );
+        
+        if (suspiciousFunctions.length > 0) {
+          maliciousPatterns.push('suspicious_functions');
+          maliciousPatterns.push(...suspiciousFunctions.map(f => f.function_name));
+          detected = true;
+        }
+      }
+      
+      return {
+        detected,
+        patterns: maliciousPatterns
+      };
+      
+    } catch (error) {
+      console.warn('Malicious code detection failed:', error);
+      return {
+        detected: false,
+        patterns: []
+      };
+    }
+  }
+
+  // Fallback AI analysis when main services are unavailable
+  async fallbackAIAnalysis(contractAddress, transactionData) {
+    // Simple fallback analysis based on common patterns
+    return {
+      risk_score: 0.5,
+      risk_level: 'medium',
+      verification_status: 'unknown',
+      malicious_patterns: [],
+      function_analysis: [],
+      explanation: 'Fallback analysis - AI services temporarily unavailable',
+      confidence: 0.3
+    };
+  }
+
+  // Enhanced notification system for contract analysis
+  async showContractAnalysisNotification(contractAddress, scanResult) {
+    try {
+      const notificationId = `contract-analysis-${contractAddress}`;
+      
+      let title = 'Contract Analysis Complete';
+      let message = `Analysis completed for ${contractAddress.substring(0, 8)}...`;
+      let contextMessage = '';
+      
+      // Customize notification based on verification status
+      if (scanResult.verification_status === 'unverified') {
+        title = 'Unverified Contract Alert';
+        message = `Contract ${contractAddress.substring(0, 8)}... is NOT verified`;
+        contextMessage = '⚠️ Proceed with caution - contract source not verified';
+      } else if (scanResult.verification_status === 'verified') {
+        title = 'Verified Contract';
+        message = `Contract ${contractAddress.substring(0, 8)}... is verified`;
+        contextMessage = '✅ Source code verified on blockchain explorer';
+      }
+      
+      // Add malicious code warnings if detected
+      if (scanResult.malicious_code_detected) {
+        title = 'MALICIOUS CONTRACT DETECTED';
+        message = `DANGER: ${contractAddress.substring(0, 8)}... contains malicious code`;
+        contextMessage = `🚨 Malicious patterns: ${scanResult.malicious_patterns.join(', ')}`;
+      }
+      
+      // Add risk level context
+      if (scanResult.risk_level) {
+        contextMessage += ` | Risk: ${scanResult.risk_level}`;
+      }
+      
+      await chrome.notifications.create(notificationId, {
+        type: 'basic',
+        iconUrl: chrome.runtime.getURL('assets/icons/security.png'),
+        title: title,
+        message: message,
+        priority: scanResult.malicious_code_detected ? 2 : 1,
+        contextMessage: contextMessage.trim()
+      });
+      
+    } catch (error) {
+      console.error('Failed to show analysis notification:', error);
+    }
+  }
+
+  // Show notification for contract threats
+  async showContractThreatNotification(contractAddress, scanResult) {
+    try {
+      const notificationId = `contract-threat-${contractAddress}`;
+      
+      await chrome.notifications.create(notificationId, {
+        type: 'basic',
+        iconUrl: chrome.runtime.getURL('assets/icons/warning.png'),
+        title: 'Contract Security Alert',
+        message: `Potential threat detected in contract ${contractAddress.substring(0, 8)}...`,
+        priority: 2,
+        contextMessage: `Risk Level: ${scanResult.riskLevel}`
+      });
+      
+    } catch (error) {
+      console.error('Failed to show threat notification:', error);
+    }
+  }
+
   async handleSwitchToBaseSepolia(tabId) {
     try {
       const targetTabId = await this.getTargetTabId(tabId);
@@ -793,6 +1151,5 @@ class ScathatBackground {
   }
 }
 
-// Initialize the background service
 new ScathatBackground();
 

@@ -347,6 +347,23 @@ class WalletBridge {
       }
 
       // Security: Validate Ethereum addresses
+
+      // Contract detection: Check if transaction is interacting with a contract
+      if (transaction.to && transaction.data && transaction.data !== '0x') {
+        // This is a contract interaction
+        const contractInfo = await this.detectContractInteraction(transaction.to, transaction.data);
+        if (contractInfo) {
+          // Notify background about contract interaction
+          this.notifyBackground('CONTRACT_INTERACTION', {
+            to: transaction.to,
+            data: transaction.data,
+            contractInfo: contractInfo
+          });
+          
+          // Trigger AI analysis for dApp contract labeling
+          this.analyzeDAppContract(transaction.to, transaction.data);
+        }
+      }
       if (transaction.from && !this.isValidEthereumAddress(transaction.from)) {
         throw new Error('Invalid from address');
       }
@@ -545,6 +562,352 @@ class WalletBridge {
       }
       
       throw error;
+    }
+  }
+
+  // Contract detection methods
+  async detectContractInteraction(contractAddress, transactionData) {
+    try {
+      if (!this.walletConnected) {
+        return null;
+      }
+
+      // Basic contract detection - check if address is a contract
+      const isContract = await this.isContractAddress(contractAddress);
+      if (!isContract) {
+        return null;
+      }
+
+      // Analyze transaction data to detect contract interactions
+      const contractInfo = await this.analyzeContractInteraction(contractAddress, transactionData);
+      
+      return {
+        contractAddress,
+        isContract: true,
+        interactionType: this.detectInteractionType(transactionData),
+        ...contractInfo
+      };
+    } catch (error) {
+      console.warn('Contract detection failed:', error);
+      return null;
+    }
+  }
+
+  async isContractAddress(address) {
+    try {
+      if (!window.ethereum) return false;
+      
+      // Check if address has code (indicating it's a contract)
+      const code = await window.ethereum.request({
+        method: 'eth_getCode',
+        params: [address, 'latest']
+      });
+      
+      return code !== '0x' && code !== '0x0';
+    } catch (error) {
+      console.warn('Contract address check failed:', error);
+      return false;
+    }
+  }
+
+  detectInteractionType(transactionData) {
+    if (!transactionData || transactionData === '0x') return 'transfer';
+    
+    // Simple function signature detection
+    const functionSignature = transactionData.substring(0, 10);
+    
+    // Common function signatures
+    const signatures = {
+      '0xa9059cbb': 'transfer',
+      '0x23b872dd': 'transferFrom',
+      '0x095ea7b3': 'approve',
+      '0x70a08231': 'balanceOf',
+      '0x18160ddd': 'totalSupply',
+      '0x313ce567': 'decimals'
+    };
+    
+    return signatures[functionSignature] || 'unknown_contract_call';
+  }
+
+  async analyzeContractInteraction(contractAddress, transactionData) {
+    try {
+      // Get contract details using etherscan-like API or local analysis
+      const contractDetails = await this.getContractDetails(contractAddress);
+      
+      return {
+        contractName: contractDetails?.name || 'Unknown Contract',
+        contractSymbol: contractDetails?.symbol || '',
+        contractType: this.detectContractType(transactionData)
+      };
+    } catch (error) {
+      console.warn('Contract analysis failed:', error);
+      return {
+        contractName: 'Unknown Contract',
+        contractSymbol: '',
+        contractType: 'unknown'
+      };
+    }
+  }
+
+  detectContractType(transactionData) {
+    if (!transactionData || transactionData === '0x') return 'native_transfer';
+    
+    const functionSig = transactionData.substring(0, 10);
+    
+    // ERC-20 function signatures
+    const erc20Sigs = ['0xa9059cbb', '0x23b872dd', '0x095ea7b3', '0x70a08231', '0x18160ddd', '0x313ce567'];
+    if (erc20Sigs.includes(functionSig)) return 'erc20';
+    
+    // ERC-721 function signatures
+    const erc721Sigs = ['0x23b872dd', '0x42842e0e', '0xb88d4fde', '0x095ea7b3', '0x70a08231', '0x6352211e'];
+    if (erc721Sigs.includes(functionSig)) return 'erc721';
+    
+    // ERC-1155 function signatures
+    const erc1155Sigs = ['0xf242432a', '0x2eb2c2d6', '0x29535249'];
+    if (erc1155Sigs.includes(functionSig)) return 'erc1155';
+    
+    return 'custom_contract';
+  }
+
+  async getContractDetails(contractAddress) {
+    try {
+      // In a real implementation, this would call an API like Etherscan
+      // For now, return basic info
+      return {
+        name: 'Detected Contract',
+        symbol: 'CONTRACT',
+        address: contractAddress
+      };
+    } catch (error) {
+      console.warn('Contract details fetch failed:', error);
+      return null;
+    }
+  }
+
+  // Analyze dApp contracts with AI for labeling and security assessment
+  async analyzeDAppContract(contractAddress, transactionData = null) {
+    try {
+      console.log('Analyzing dApp contract with AI:', contractAddress);
+      
+      // Check if this is a new dApp contract that needs analysis
+      const dAppContracts = await this.getStoredDAppContracts();
+      if (dAppContracts[contractAddress]) {
+        // Contract already analyzed, check if analysis is recent
+        const lastAnalysis = dAppContracts[contractAddress].last_analyzed;
+        if (Date.now() - lastAnalysis < 24 * 60 * 60 * 1000) { // 24 hours
+          console.log('Contract analysis is recent, skipping');
+          return;
+        }
+      }
+
+      // Request AI analysis from background script
+      const analysisResult = await this.requestAIAnalysis(contractAddress, transactionData);
+      
+      if (analysisResult.success) {
+        // Store analysis results for dApp labeling
+        await this.storeDAppContractAnalysis(contractAddress, analysisResult);
+        
+        // Show notification based on analysis results
+        this.showDAppContractNotification(contractAddress, analysisResult);
+        
+        // Label the contract in the dApp interface
+        this.labelDAppContract(contractAddress, analysisResult);
+      }
+      
+    } catch (error) {
+      console.warn('dApp contract analysis failed:', error);
+    }
+  }
+
+  // Request AI analysis from background script
+  async requestAIAnalysis(contractAddress, transactionData) {
+    try {
+      return await chrome.runtime.sendMessage({
+        type: 'ANALYZE_CONTRACT_AI',
+        data: {
+          contractAddress: contractAddress,
+          transactionData: transactionData
+        }
+      });
+    } catch (error) {
+      console.warn('AI analysis request failed:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Store dApp contract analysis results
+  async storeDAppContractAnalysis(contractAddress, analysisResult) {
+    try {
+      const dAppContracts = await this.getStoredDAppContracts();
+      
+      dAppContracts[contractAddress] = {
+        verification_status: analysisResult.verification_status,
+        malicious_code_detected: analysisResult.malicious_code_detected,
+        malicious_patterns: analysisResult.malicious_patterns || [],
+        risk_score: analysisResult.ai_analysis?.risk_score || 0.5,
+        risk_level: analysisResult.ai_analysis?.risk_level || 'medium',
+        contract_type: this.detectContractTypeFromAnalysis(analysisResult),
+        last_analyzed: Date.now(),
+        analysis_timestamp: Date.now(),
+        dapp_url: window.location.hostname
+      };
+
+      await chrome.storage.local.set({ dAppContracts: dAppContracts });
+      
+    } catch (error) {
+      console.warn('Failed to store dApp contract analysis:', error);
+    }
+  }
+
+  // Get stored dApp contracts
+  async getStoredDAppContracts() {
+    try {
+      const result = await chrome.storage.local.get(['dAppContracts']);
+      return result.dAppContracts || {};
+    } catch (error) {
+      console.warn('Failed to get stored dApp contracts:', error);
+      return {};
+    }
+  }
+
+  // Detect contract type from AI analysis
+  detectContractTypeFromAnalysis(analysisResult) {
+    if (analysisResult.ai_analysis?.contract_type) {
+      return analysisResult.ai_analysis.contract_type;
+    }
+    
+    // Fallback detection based on function patterns
+    if (analysisResult.malicious_patterns?.includes('erc20_pattern')) return 'erc20';
+    if (analysisResult.malicious_patterns?.includes('erc721_pattern')) return 'erc721';
+    if (analysisResult.malicious_patterns?.includes('erc1155_pattern')) return 'erc1155';
+    
+    return 'unknown';
+  }
+
+  // Show notification for dApp contract analysis
+  showDAppContractNotification(contractAddress, analysisResult) {
+    try {
+      const shortAddress = contractAddress.substring(0, 8) + '...';
+      
+      let message = '';
+      let title = 'Contract Analysis';
+      
+      if (analysisResult.verification_status === 'unverified') {
+        title = '⚠️ Unverified Contract';
+        message = `Contract ${shortAddress} is NOT verified. Proceed with caution.`;
+      } else if (analysisResult.verification_status === 'verified') {
+        title = '✅ Verified Contract';
+        message = `Contract ${shortAddress} is verified and safe.`;
+      }
+      
+      if (analysisResult.malicious_code_detected) {
+        title = '🚨 MALICIOUS CONTRACT';
+        message = `DANGER: Contract ${shortAddress} contains malicious code!`;
+      }
+      
+      // Create browser notification
+      if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification(title, {
+          body: message,
+          icon: chrome.runtime.getURL('assets/icons/security.png')
+        });
+      }
+      
+    } catch (error) {
+      console.warn('Failed to show dApp contract notification:', error);
+    }
+  }
+
+  // Label dApp contract in the interface
+  labelDAppContract(contractAddress, analysisResult) {
+    try {
+      // Find contract address elements in the dApp
+      const addressElements = this.findContractAddressElements(contractAddress);
+      
+      addressElements.forEach(element => {
+        this.applyContractLabel(element, analysisResult);
+      });
+      
+    } catch (error) {
+      console.warn('Failed to label dApp contract:', error);
+    }
+  }
+
+  // Find elements containing contract addresses
+  findContractAddressElements(contractAddress) {
+    const elements = [];
+    const shortAddress = contractAddress.substring(2, 8); // First 6 chars after 0x
+    
+    // Search for elements containing the contract address
+    const possibleSelectors = [
+      `*[data-address*="${contractAddress}"]`,
+      `*[data-contract*="${contractAddress}"]`,
+      `*[href*="${contractAddress}"]`,
+      `*:contains("${contractAddress}")`,
+      `*:contains("${shortAddress}")`
+    ];
+    
+    possibleSelectors.forEach(selector => {
+      try {
+        const matches = document.querySelectorAll(selector);
+        matches.forEach(element => elements.push(element));
+      } catch (error) {
+        // Some selectors might not be supported
+      }
+    });
+    
+    return elements;
+  }
+
+  // Apply contract label to UI elements
+  applyContractLabel(element, analysisResult) {
+    const label = this.createContractLabel(analysisResult);
+    
+    // Add label near the contract address
+    if (element.parentNode) {
+      const labelElement = document.createElement('span');
+      labelElement.className = 'scathat-contract-label';
+      labelElement.innerHTML = label;
+      labelElement.style.cssText = `
+        margin-left: 8px;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: bold;
+        ${this.getLabelStyles(analysisResult)}
+      `;
+      
+      element.parentNode.insertBefore(labelElement, element.nextSibling);
+    }
+  }
+
+  // Create contract label HTML
+  createContractLabel(analysisResult) {
+    if (analysisResult.malicious_code_detected) {
+      return '🚨 MALICIOUS';
+    } else if (analysisResult.verification_status === 'unverified') {
+      return '⚠️ UNVERIFIED';
+    } else if (analysisResult.verification_status === 'verified') {
+      return '✅ VERIFIED';
+    } else if (analysisResult.risk_level === 'high') {
+      return '⚠️ HIGH RISK';
+    } else {
+      return '🔍 ANALYZED';
+    }
+  }
+
+  // Get CSS styles for label based on analysis
+  getLabelStyles(analysisResult) {
+    if (analysisResult.malicious_code_detected) {
+      return 'background-color: #ff4444; color: white; border: 1px solid #cc0000;';
+    } else if (analysisResult.verification_status === 'unverified') {
+      return 'background-color: #ff9800; color: white; border: 1px solid #f57c00;';
+    } else if (analysisResult.verification_status === 'verified') {
+      return 'background-color: #4caf50; color: white; border: 1px solid #388e3c;';
+    } else if (analysisResult.risk_level === 'high') {
+      return 'background-color: #ff6d00; color: white; border: 1px solid #e65100;';
+    } else {
+      return 'background-color: #2196f3; color: white; border: 1px solid #1976d2;';
     }
   }
   
